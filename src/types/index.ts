@@ -37,6 +37,7 @@ export interface Worker {
   riskScore: number;      // 0..100 composite risk calculated by AI
   lastPing: string;
   history: VitalsHistoryPoint[];
+  ignoredStatus?: boolean; // If true, UI suppresses warning/critical states
 }
 
 export interface MineZone {

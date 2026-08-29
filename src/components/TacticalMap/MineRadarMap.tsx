@@ -22,6 +22,7 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
     selectedWorker,
     selectedRobot,
     isRobotDeployed,
+    pingedEntityId,
     dispatchRobotToWorker
   } = useMineSafety();
 
@@ -405,6 +406,18 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
                 />
               )}
 
+              {/* Ping Marker */}
+              {pingedEntityId === robot.id && (
+                <circle
+                  r="45"
+                  fill="none"
+                  stroke="#ffffff"
+                  strokeWidth="4"
+                  className="animate-ping"
+                  filter="url(#neonGlow)"
+                />
+              )}
+
               {/* Robot Outer Tactical Ring */}
               <circle
                 r="18"
@@ -473,6 +486,18 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
                     strokeWidth="2.5"
                     strokeDasharray="5 4"
                     className="animate-spin"
+                    filter="url(#neonGlow)"
+                  />
+                )}
+
+                {/* Ping Marker */}
+                {pingedEntityId === worker.id && (
+                  <circle
+                    r="45"
+                    fill="none"
+                    stroke="#ffffff"
+                    strokeWidth="4"
+                    className="animate-ping"
                     filter="url(#neonGlow)"
                   />
                 )}

@@ -17,7 +17,7 @@ import {
 import { getStatusColor } from '../utils/riskEngine';
 
 export const ActiveEntityPanel: React.FC = () => {
-  const { selectedWorker, selectedRobot, zones } = useMineSafety();
+  const { selectedWorker, selectedRobot, zones, pingEntity, updateWorkerVitals } = useMineSafety();
   const ecgCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // Animated Real-Time ECG Waveform for Worker
@@ -111,8 +111,8 @@ export const ActiveEntityPanel: React.FC = () => {
   if (selectedWorker) {
     const currentZone = zones.find((z) => z.id === selectedWorker.zoneId);
     const colors = getStatusColor(selectedWorker.status);
-    const isCritical = selectedWorker.status === 'critical';
-    const isWarning = selectedWorker.status === 'warning';
+    const isCritical = selectedWorker.status === 'critical' && !selectedWorker.ignoredStatus;
+    const isWarning = selectedWorker.status === 'warning' && !selectedWorker.ignoredStatus;
 
     const panelBgClass = isCritical
       ? 'bg-red-950/40 border-red-900/50 shadow-[0_0_30px_rgba(255,0,0,0.1)]'
@@ -123,25 +123,35 @@ export const ActiveEntityPanel: React.FC = () => {
     return (
       <div className={`w-full h-full min-h-[500px] backdrop-blur-md rounded-xl border p-4 font-mono text-slate-200 overflow-y-auto ${panelBgClass}`}>
         {/* Header */}
-        <div className="flex items-center space-x-3 border-b border-cyan-900/50 pb-4 mb-4">
-          <div className="w-12 h-12 rounded-xl bg-cyan-950/80 border border-cyan-500/60 flex flex-shrink-0 items-center justify-center text-cyan-400 font-bold text-lg">
-            {selectedWorker.id.replace('MINER-', '#')}
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <h3 className="text-lg font-bold text-white tracking-wide">
-                {selectedWorker.name}
-              </h3>
+        <div className="flex items-start justify-between border-b border-cyan-900/50 pb-4 mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 rounded-xl bg-cyan-950/80 border border-cyan-500/60 flex flex-shrink-0 items-center justify-center text-cyan-400 font-bold text-lg">
+              {selectedWorker.id.replace('MINER-', '#')}
             </div>
-            <div className="flex items-center gap-2 mt-1">
-              <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${colors.badgeBg} ${colors.badgeText} ${colors.badgeBorder}`}>
-                {selectedWorker.status.toUpperCase()}
-              </span>
-              <p className="text-[10px] text-slate-400">
-                {selectedWorker.role}
-              </p>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h3 className="text-lg font-bold text-white tracking-wide">
+                  {selectedWorker.name}
+                </h3>
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${colors.badgeBg} ${colors.badgeText} ${colors.badgeBorder}`}>
+                  {selectedWorker.status.toUpperCase()}
+                </span>
+                <p className="text-[10px] text-slate-400">
+                  {selectedWorker.role}
+                </p>
+              </div>
             </div>
           </div>
+          
+          <button
+            onClick={() => pingEntity(selectedWorker.id)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-950/50 hover:bg-cyan-900/80 border border-cyan-500/40 text-cyan-300 rounded text-[10px] font-bold transition-all shadow-[0_0_10px_rgba(0,240,255,0.15)]"
+          >
+            <Radio className="w-3 h-3" />
+            PING
+          </button>
         </div>
 
         {/* Location & Contact */}
@@ -203,11 +213,21 @@ export const ActiveEntityPanel: React.FC = () => {
         </div>
 
         {/* Hardware Status */}
-        <div className="bg-slate-950/70 border border-slate-800 p-3 rounded-xl text-[10px] grid grid-cols-2 gap-2">
+        <div className="bg-slate-950/70 border border-slate-800 p-3 rounded-xl text-[10px] grid grid-cols-2 gap-2 mb-4">
           <div><span className="text-slate-500 block">BATT</span><span className="text-emerald-400 font-bold">{Math.round(selectedWorker.battery)}%</span></div>
           <div><span className="text-slate-500 block">SIGNAL</span><span className="text-white font-bold">{selectedWorker.signalStrength}%</span></div>
           <div className="col-span-2"><span className="text-slate-500 block">MOTION</span><span className="text-cyan-400 font-bold uppercase">{selectedWorker.motionStatus.replace('_', ' ')}</span></div>
         </div>
+
+        {/* Action Bottom Row */}
+        {(selectedWorker.status === 'warning' || selectedWorker.status === 'critical') && !selectedWorker.ignoredStatus && (
+          <button
+            onClick={() => updateWorkerVitals(selectedWorker.id, { ignoredStatus: true })}
+            className="w-full mt-auto py-2 rounded border border-slate-700 bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-white text-[10px] font-bold font-mono transition-colors flex items-center justify-center gap-1.5"
+          >
+            IGNORE WARNING STATE
+          </button>
+        )}
       </div>
     );
   }
@@ -216,21 +236,30 @@ export const ActiveEntityPanel: React.FC = () => {
     return (
       <div className="w-full h-full min-h-[500px] bg-[#090e1a]/90 backdrop-blur-md rounded-xl border border-cyan-900/50 p-4 font-mono text-slate-200 overflow-y-auto shadow-[0_0_30px_rgba(0,240,255,0.05)]">
         {/* Header */}
-        <div className="flex items-center space-x-3 border-b border-cyan-900/50 pb-4 mb-4">
-          <div className="w-12 h-12 rounded-xl bg-cyan-950/80 border border-cyan-500/60 flex items-center justify-center text-cyan-400">
-            <Bot className="w-6 h-6 animate-pulse" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <h3 className="text-lg font-bold text-white tracking-wide">{selectedRobot.name}</h3>
+        <div className="flex items-start justify-between border-b border-cyan-900/50 pb-4 mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 rounded-xl bg-cyan-950/80 border border-cyan-500/60 flex items-center justify-center text-cyan-400">
+              <Bot className="w-6 h-6 animate-pulse" />
             </div>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-500/40 text-cyan-300 uppercase">
-                {selectedRobot.status.replace('_', ' ')}
-              </span>
-              <p className="text-[10px] text-slate-400">{selectedRobot.model}</p>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h3 className="text-lg font-bold text-white tracking-wide">{selectedRobot.name}</h3>
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-500/40 text-cyan-300 uppercase">
+                  {selectedRobot.status.replace('_', ' ')}
+                </span>
+                <p className="text-[10px] text-slate-400">{selectedRobot.model}</p>
+              </div>
             </div>
           </div>
+          <button
+            onClick={() => pingEntity(selectedRobot.id)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-950/50 hover:bg-cyan-900/80 border border-cyan-500/40 text-cyan-300 rounded text-[10px] font-bold transition-all shadow-[0_0_10px_rgba(0,240,255,0.15)]"
+          >
+            <Radio className="w-3 h-3" />
+            PING
+          </button>
         </div>
 
         {/* Camera Feed Placeholder */}

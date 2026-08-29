@@ -112,9 +112,9 @@ export const WorkerList: React.FC = () => {
               className={`cursor-pointer rounded-lg border p-2 transition-all flex items-center justify-between ${
                 isSelected
                   ? `bg-cyan-950/40 border-cyan-400 shadow-[0_0_10px_rgba(0,240,255,0.2)]`
-                  : worker.status === 'critical'
+                  : worker.status === 'critical' && !worker.ignoredStatus
                   ? 'bg-red-950/20 border-red-500/40 hover:bg-red-950/30'
-                  : worker.status === 'warning'
+                  : worker.status === 'warning' && !worker.ignoredStatus
                   ? 'bg-orange-950/20 border-orange-500/40 hover:bg-orange-950/30'
                   : 'bg-slate-900/40 border-slate-800 hover:border-slate-600'
               }`}

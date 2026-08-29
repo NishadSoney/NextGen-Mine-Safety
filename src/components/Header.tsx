@@ -69,7 +69,7 @@ export const Header: React.FC = () => {
           <div>
             <div className="flex items-center space-x-2">
               <h1 className="text-xl font-bold tracking-wider text-white font-hud flex items-center gap-1.5">
-                AEGIS<span className="text-cyan-400">MINE</span>
+                NextGen<span className="text-cyan-400">Safety</span>
                 <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/30 text-cyan-300">
                   v3.4-COMMAND
                 </span>

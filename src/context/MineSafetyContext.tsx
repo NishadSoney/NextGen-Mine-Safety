@@ -43,8 +43,10 @@ interface MineSafetyContextType {
   activeTab: 'dashboard' | 'radar' | 'workers' | 'robot' | 'sensors' | 'analytics' | 'research';
   searchFilter: string;
   statusFilter: 'all' | 'safe' | 'warning' | 'critical';
+  pingedEntityId: string | null;
   
   // Actions
+  pingEntity: (id: string) => void;
   addWorker: (newWorker: Omit<Worker, 'history' | 'status' | 'riskScore' | 'lastPing' | 'heading'>) => void;
   removeWorker: (workerId: string) => void;
   updateWorkerVitals: (workerId: string, updates: Partial<Worker>) => void;
@@ -108,6 +110,15 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [activeTab, setActiveTab] = useState<'dashboard' | 'radar' | 'workers' | 'robot' | 'sensors' | 'analytics' | 'research'>('dashboard');
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'safe' | 'warning' | 'critical'>('all');
+  const [pingedEntityId, setPingedEntityId] = useState<string | null>(null);
+
+  const pingEntity = (id: string) => {
+    soundFX.playRadarPing();
+    setPingedEntityId(id);
+    setTimeout(() => {
+      setPingedEntityId((current) => current === id ? null : current);
+    }, 4000);
+  };
 
   // Toggle Audio Mute
   const toggleAudioMute = () => {
@@ -550,6 +561,8 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         activeTab,
         searchFilter,
         statusFilter,
+        pingedEntityId,
+        pingEntity,
         addWorker,
         removeWorker,
         updateWorkerVitals,
