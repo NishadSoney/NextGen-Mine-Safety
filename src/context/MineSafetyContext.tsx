@@ -31,12 +31,14 @@ interface MineSafetyContextType {
   anomalies: AIAnomalyPrediction[];
   activeRescueRoute: Array<[number, number]> | null;
   selectedWorker: Worker | null;
+  selectedRobot: RescueRobot | null;
   selectedZone: MineZone | null;
   isSimulating: boolean;
   isAudioMuted: boolean;
   isEvacuationAlarmActive: boolean;
   isAddWorkerOpen: boolean;
   isResearchOpen: boolean;
+  isRobotDeployed: boolean;
   radarSweepAngle: number;
   activeTab: 'dashboard' | 'radar' | 'workers' | 'robot' | 'sensors' | 'analytics' | 'research';
   searchFilter: string;
@@ -47,6 +49,7 @@ interface MineSafetyContextType {
   removeWorker: (workerId: string) => void;
   updateWorkerVitals: (workerId: string, updates: Partial<Worker>) => void;
   selectWorker: (worker: Worker | null) => void;
+  selectRobot: (robot: RescueRobot | null) => void;
   selectZone: (zone: MineZone | null) => void;
   toggleSimulating: () => void;
   toggleAudioMute: () => void;
@@ -56,6 +59,9 @@ interface MineSafetyContextType {
   setActiveTab: (tab: 'dashboard' | 'radar' | 'workers' | 'robot' | 'sensors' | 'analytics' | 'research') => void;
   setSearchFilter: (query: string) => void;
   setStatusFilter: (filter: 'all' | 'safe' | 'warning' | 'critical') => void;
+  
+  // Robot controls
+  toggleRobotDeployment: () => void;
   
   // Robot controls
   dispatchRobotToWorker: (workerId: string) => void;
@@ -88,6 +94,7 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   );
   
   const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
+  const [selectedRobot, setSelectedRobot] = useState<RescueRobot | null>(null);
   const [selectedZone, setSelectedZone] = useState<MineZone | null>(null);
   
   const [isSimulating, setIsSimulating] = useState<boolean>(true);
@@ -95,6 +102,7 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [isEvacuationAlarmActive, setIsEvacuationAlarmActive] = useState<boolean>(false);
   const [isAddWorkerOpen, setIsAddWorkerOpen] = useState<boolean>(false);
   const [isResearchOpen, setIsResearchOpen] = useState<boolean>(false);
+  const [isRobotDeployed, setIsRobotDeployed] = useState<boolean>(true); // default true for demo
   const [radarSweepAngle, setRadarSweepAngle] = useState<number>(0);
   
   const [activeTab, setActiveTab] = useState<'dashboard' | 'radar' | 'workers' | 'robot' | 'sensors' | 'analytics' | 'research'>('dashboard');
@@ -197,6 +205,14 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }));
 
     calculateRescuePathToWorker(workerId);
+  };
+
+  const toggleRobotDeployment = () => {
+    soundFX.playBlip();
+    setIsRobotDeployed((prev) => !prev);
+    if (selectedRobot) {
+      setSelectedRobot(null);
+    }
   };
 
   const setRobotCameraMode = (mode: CameraMode) => {
@@ -522,12 +538,14 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         anomalies,
         activeRescueRoute,
         selectedWorker,
+        selectedRobot,
         selectedZone,
         isSimulating,
         isAudioMuted,
         isEvacuationAlarmActive,
         isAddWorkerOpen,
         isResearchOpen,
+        isRobotDeployed,
         radarSweepAngle,
         activeTab,
         searchFilter,
@@ -535,7 +553,8 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         addWorker,
         removeWorker,
         updateWorkerVitals,
-        selectWorker: setSelectedWorker,
+        selectWorker: (w) => { setSelectedWorker(w); setSelectedRobot(null); },
+        selectRobot: (r) => { setSelectedRobot(r); setSelectedWorker(null); },
         selectZone: setSelectedZone,
         toggleSimulating,
         toggleAudioMute,
@@ -545,6 +564,7 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setActiveTab,
         setSearchFilter,
         setStatusFilter,
+        toggleRobotDeployment,
         dispatchRobotToWorker,
         setRobotCameraMode,
         setRobotStatus,

@@ -15,7 +15,8 @@ import {
   Cpu, 
   Radar,
   Flame,
-  LayoutDashboard
+  LayoutDashboard,
+  UserMinus
 } from 'lucide-react';
 import { useMineSafety } from '../context/MineSafetyContext';
 
@@ -26,13 +27,13 @@ export const Header: React.FC = () => {
     isSimulating,
     isAudioMuted,
     isEvacuationAlarmActive,
-    activeTab,
+    isRobotDeployed,
     toggleSimulating,
     toggleAudioMute,
     toggleEvacuationAlarm,
     setIsAddWorkerOpen,
     setIsResearchOpen,
-    setActiveTab,
+    toggleRobotDeployment,
     resetAllSimulation
   } = useMineSafety();
 
@@ -133,7 +134,20 @@ export const Header: React.FC = () => {
             className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-mono font-bold rounded bg-cyan-950/70 border border-cyan-500/50 text-cyan-300 hover:bg-cyan-900/60 hover:border-cyan-400 hover:text-white transition-all shadow-[0_0_10px_rgba(0,240,255,0.15)]"
           >
             <UserPlus className="w-3.5 h-3.5" />
-            <span>+ ADD MINER</span>
+            <span className="hidden md:inline">+ ADD MINER</span>
+          </button>
+
+          {/* Toggle Robot Button */}
+          <button
+            onClick={toggleRobotDeployment}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-mono font-bold rounded border transition-all ${
+              isRobotDeployed
+                ? 'bg-amber-950/70 border-amber-500/50 text-amber-300 hover:bg-amber-900/60'
+                : 'bg-emerald-950/70 border-emerald-500/50 text-emerald-300 hover:bg-emerald-900/60'
+            }`}
+          >
+            <Bot className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">{isRobotDeployed ? 'RECALL BOT' : 'DEPLOY BOT'}</span>
           </button>
 
           {/* Research & Architecture Hub */}
@@ -174,93 +188,6 @@ export const Header: React.FC = () => {
           </button>
         </div>
       </div>
-
-      {/* Navigation Tabs Bar */}
-      <nav className="flex items-center space-x-1 mt-2.5 pt-2 border-t border-slate-800/70 overflow-x-auto text-xs font-mono scrollbar-none">
-        <button
-          onClick={() => setActiveTab('dashboard')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-t-md font-semibold transition-all ${
-            activeTab === 'dashboard'
-              ? 'bg-cyan-950/80 text-cyan-300 border-b-2 border-cyan-400 shadow-[inset_0_1px_10px_rgba(0,240,255,0.1)]'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
-          }`}
-        >
-          <LayoutDashboard className="w-3.5 h-3.5" />
-          <span>OVERVIEW COMMAND</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('radar')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-t-md font-semibold transition-all ${
-            activeTab === 'radar'
-              ? 'bg-cyan-950/80 text-cyan-300 border-b-2 border-cyan-400'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
-          }`}
-        >
-          <Radar className="w-3.5 h-3.5 text-cyan-400" />
-          <span>TACTICAL RADAR MAP</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('workers')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-t-md font-semibold transition-all ${
-            activeTab === 'workers'
-              ? 'bg-cyan-950/80 text-cyan-300 border-b-2 border-cyan-400'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
-          }`}
-        >
-          <Users className="w-3.5 h-3.5" />
-          <span>MINERS & JACKETS ({workers.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('robot')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-t-md font-semibold transition-all ${
-            activeTab === 'robot'
-              ? 'bg-cyan-950/80 text-cyan-300 border-b-2 border-cyan-400'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
-          }`}
-        >
-          <Bot className="w-3.5 h-3.5 text-cyan-400" />
-          <span>RESCUE ROVER HUD</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('sensors')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-t-md font-semibold transition-all ${
-            activeTab === 'sensors'
-              ? 'bg-cyan-950/80 text-cyan-300 border-b-2 border-cyan-400'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
-          }`}
-        >
-          <Cpu className="w-3.5 h-3.5" />
-          <span>FIXED SENSORS</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('analytics')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-t-md font-semibold transition-all ${
-            activeTab === 'analytics'
-              ? 'bg-cyan-950/80 text-cyan-300 border-b-2 border-cyan-400'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
-          }`}
-        >
-          <Activity className="w-3.5 h-3.5 text-amber-400" />
-          <span>AI RISK MATRIX</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('research')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-t-md font-semibold transition-all ${
-            activeTab === 'research'
-              ? 'bg-cyan-950/80 text-cyan-300 border-b-2 border-cyan-400'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
-          }`}
-        >
-          <FileText className="w-3.5 h-3.5 text-purple-400" />
-          <span>SYSTEM RESEARCH</span>
-        </button>
-      </nav>
     </header>
   );
 };

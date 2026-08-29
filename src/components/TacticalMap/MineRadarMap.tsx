@@ -18,7 +18,10 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
     activeRescueRoute,
     radarSweepAngle,
     selectWorker,
+    selectRobot,
     selectedWorker,
+    selectedRobot,
+    isRobotDeployed,
     dispatchRobotToWorker
   } = useMineSafety();
 
@@ -44,11 +47,16 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
     selectWorker(worker);
   };
 
+  const handleRobotClick = () => {
+    soundFX.playRadioBurst();
+    selectRobot(robot);
+  };
+
   return (
     <div
       ref={containerRef}
-      className={`relative w-full rounded-xl overflow-hidden border border-cyan-900/60 bg-[#070b14] select-none ${
-        compact ? 'h-[440px]' : 'h-[620px] lg:h-[700px]'
+      className={`relative w-full rounded-xl overflow-hidden border border-cyan-900/60 bg-[#070b14] select-none shadow-[0_0_50px_rgba(0,0,0,0.5)] ${
+        compact ? 'h-[440px]' : 'h-full min-h-[500px]'
       }`}
     >
       {/* Background Tactical Grid & Scanline FX */}
@@ -367,47 +375,66 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
           })}
 
           {/* 8. Rescue Robot Marker & Dynamic FOV Sensor Cone (COD Style UGV) */}
-          <g transform={`translate(${robot.x}, ${robot.y})`}>
-            {/* Robot FOV Camera Cone */}
-            <path
-              d="M 0 0 L -35 -80 A 90 90 0 0 1 35 -80 Z"
-              fill="#00f0ff"
-              fillOpacity="0.12"
-              stroke="#00f0ff"
-              strokeWidth="1"
-              strokeDasharray="3 3"
-              transform={`rotate(${robot.heading + 90})`}
-            />
-
-            {/* Robot Outer Tactical Ring */}
-            <circle
-              r="18"
-              fill="#07152b"
-              stroke="#00f0ff"
-              strokeWidth="2"
-              filter="url(#neonGlow)"
-            />
-
-            {/* Robot Heading Pointer */}
-            <polygon
-              points="0,-12 6,4 0,1 -6,4"
-              fill="#00f0ff"
-              transform={`rotate(${robot.heading + 90})`}
-            />
-
-            <text
-              x="0"
-              y="-22"
-              fill="#00f0ff"
-              fontSize="9"
-              fontFamily="monospace"
-              fontWeight="bold"
-              textAnchor="middle"
-              className="bg-black/90 px-1"
+          {isRobotDeployed && (
+            <g 
+              transform={`translate(${robot.x}, ${robot.y})`}
+              onClick={handleRobotClick}
+              className="cursor-pointer group"
             >
-              🤖 {robot.id}
-            </text>
-          </g>
+              {/* Robot FOV Camera Cone */}
+              <path
+                d="M 0 0 L -35 -80 A 90 90 0 0 1 35 -80 Z"
+                fill="#00f0ff"
+                fillOpacity="0.12"
+                stroke="#00f0ff"
+                strokeWidth="1"
+                strokeDasharray="3 3"
+                transform={`rotate(${robot.heading + 90})`}
+              />
+
+              {/* Selection Marker */}
+              {selectedRobot?.id === robot.id && (
+                <circle
+                  r="24"
+                  fill="none"
+                  stroke="#00f0ff"
+                  strokeWidth="2.5"
+                  strokeDasharray="5 4"
+                  className="animate-spin"
+                  filter="url(#neonGlow)"
+                />
+              )}
+
+              {/* Robot Outer Tactical Ring */}
+              <circle
+                r="18"
+                fill="#07152b"
+                stroke="#00f0ff"
+                strokeWidth="2"
+                filter="url(#neonGlow)"
+              />
+
+              {/* Robot Heading Pointer */}
+              <polygon
+                points="0,-12 6,4 0,1 -6,4"
+                fill="#00f0ff"
+                transform={`rotate(${robot.heading + 90})`}
+              />
+
+              <text
+                x="0"
+                y="-22"
+                fill="#00f0ff"
+                fontSize="9"
+                fontFamily="monospace"
+                fontWeight="bold"
+                textAnchor="middle"
+                className="bg-black/90 px-1"
+              >
+                🤖 {robot.id}
+              </text>
+            </g>
+          )}
 
           {/* 9. Miner / Worker Dynamic Markers with Pulsing Health Rings */}
           {workers.map((worker) => {
@@ -440,12 +467,13 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
                 {/* Selection Marker */}
                 {isSelected && (
                   <circle
-                    r="20"
+                    r="22"
                     fill="none"
                     stroke="#00f0ff"
-                    strokeWidth="2"
-                    strokeDasharray="4 3"
+                    strokeWidth="2.5"
+                    strokeDasharray="5 4"
                     className="animate-spin"
+                    filter="url(#neonGlow)"
                   />
                 )}
 
