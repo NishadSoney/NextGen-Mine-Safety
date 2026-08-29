@@ -1,61 +1,60 @@
-# 🛡️ AEGIS-MINE | AI Subterranean Monitoring & Rescue Command Center
+# 🛡️ NextGen Safety | AI-Powered Mine Monitoring & Rescue Command Center
 
-> A tactical, centralized AI-powered control room dashboard for subterranean mine safety, integrating real-time telemetry from **Smart Safety IoT Jackets**, **Fixed Mine Environmental Sensors**, and **Autonomous Rescue Robots (UGVs)**.
+Welcome to **NextGen Safety**—a modern, intelligent command center designed to keep miners safe and coordinate rescue efforts in real-time. 
 
----
-
-## 🌟 Key Features
-
-- **🗺️ Call of Duty (COD) Tactical Mine Radar & Map**:
-  - High-contrast tactical HUD with rotating 360° radar sweep beam, scanline overlay, and depth elevation tracks.
-  - Interactive multi-level subterranean map (Shaft Entrance, Main Haulage, Active Longwall Face, Deep Sub-Tunnel 4B, Ventilation Exhaust Adit, Blast-Proof Refuge Chamber).
-  - Dynamic entity markers for miners, rescue robots (with FOV camera cone), fixed gas sensors, and toxic gas plume heatmaps.
-  - **A\* Dynamic Hazard Rescue Pathfinding**: Calculates and renders the safest evacuation corridor in glowing cyan/green, avoiding toxic gas plumes and collapsed corridors.
-
-- **👷 Miner Biometrics & Smart Safety Jacket Telemetry**:
-  - **Live Animated ECG Waveform Monitor**: Real-time Lead-II cardiac graph with dynamic P-Q-R-S-T profile.
-  - **Live Biometrics**: Heart Rate (BPM), $\text{SpO}_2$ (%), Body Temperature (°C), micro-climate gas exposure ($\text{CH}_4$, $\text{CO}$, $\text{O}_2$), 6-axis fall/motion detection.
-  - **Worker Management**: Add new miners with jacket pairing, blood type, emergency contact, and role; or safely evacuate/remove miners from active shifts.
-
-- **🤖 Autonomous Rescue Robot (Titan MK-IV UGV) HUD**:
-  - Simulated video feed with toggleable **Optical**, **Thermal FLIR**, and **LiDAR 3D Wireframe** modes.
-  - Front atmospheric gas sniffer ($\text{CH}_4$, $\text{CO}$, $\text{O}_2$, $\text{H}_2\text{S}$) and 4-quadrant LiDAR obstacle clearance radar.
-  - Manual D-pad teleoperation and autonomous patrol/dispatch modes.
-
-- **🧠 Neural AI Risk Matrix & Hazard Prediction Engine**:
-  - Multi-parametric composite risk scoring ($0-100$ index) combining vitals, gas toxicity, inactivity, and zone hazards.
-  - LSTM predictive anomaly forecasts (early methane surge prediction, cardiac distress detection).
-  - Control room emergency threat injector (*Methane Outbreak*, *Man Down / Fall Detected*, *Roof Collapse*, *Manual SOS Beacon*).
-
-- **🔊 Tactical Web Audio Synthesizer**:
-  - Synthesized tactical sound effects (radar ping, critical evacuation alarm klaxon, radio chatter bursts, click blips) with toggleable mute control.
-
-- **📄 Integrated Technical Research & Architecture Hub**:
-  - Complete whitepaper detailing MQTT topic trees, WebSocket pipelines, TimescaleDB time-series schemas, UWB indoor positioning, and zero-trust offline edge resilience.
+Mining is tough, dangerous work. We built this dashboard to give safety operators a clear, centralized view of everything happening underground. By bringing together live data from smart worker jackets, environmental sensors, and autonomous rescue bots, NextGen Safety ensures that when every second counts, you have the exact information you need to make life-saving decisions.
 
 ---
 
-## 🛠️ Tech Stack
+## 🌟 What It Does
 
+### 🗺️ See Everything with the Tactical Mine Map
+No more guessing where your teams are. Our interactive, multi-level map gives you a live look at the entire mine—from the shaft entrance down to the deep sub-tunnels. 
+- **Track Everyone:** Watch live markers for your miners, rescue bots, and fixed gas sensors.
+- **Find the Safest Way Out:** If an emergency hits, the system uses dynamic A* pathfinding to instantly map out the safest evacuation route, steering clear of collapsed tunnels or toxic gas plumes.
+- **Ping to Locate:** Instantly highlight a specific worker or bot on the map with a glowing ping to find them in crowded or complex sectors.
+
+### 👷 Keep Your Crew Safe (Worker Biometrics)
+Every miner wears a Smart Safety Jacket that constantly feeds data back to the dashboard.
+- **Live Vitals:** Monitor heart rate, oxygen levels ($\text{SpO}_2$), and body temperature in real-time with an animated ECG waveform.
+- **Hazard Tracking:** Keep an eye on the micro-climate around each worker, tracking dangerous gases like Methane ($\text{CH}_4$) and Carbon Monoxide ($\text{CO}$).
+- **Fall & Motion Detection:** Instantly know if a worker has stopped moving or taken a serious fall.
+- **Smart Warnings:** The system automatically flags workers in "Warning" or "Critical" states. (You can also easily acknowledge and ignore these warnings once a situation is under control).
+
+### 🤖 Send in the Bots (NextGen Bot-1)
+When it's too dangerous for a human rescue team, deploy the NextGen Bot-1. 
+- **Live Telemetry:** Monitor the bot's battery, signal latency, and heading.
+- **Environmental Sniffer:** The bot carries its own gas sensors to scout ahead and report back on atmospheric conditions.
+- **Drag & Drop Deployment:** Quickly deploy reserve bots (or workers) directly onto the map using the bottom Staging Dock.
+
+### 🧠 AI That Anticipates Trouble
+NextGen Safety doesn't just show you data; it helps you understand it. Our risk engine calculates a real-time risk score (0-100) for every worker by looking at their vitals, surrounding gas levels, and zone hazards. It can even predict anomalies like impending methane surges or cardiac distress before they become critical.
+
+---
+
+## 🛠️ Built With Modern Tech
+
+We wanted this dashboard to be fast, reliable, and look incredibly sharp (because safety software shouldn't look like it was built in 1995).
 - **Frontend**: React 19, TypeScript, Vite
-- **Styling**: Tailwind CSS, Custom Tactical HUD & CRT Scanline Themes
+- **Styling**: Tailwind CSS (customized for that sleek, dark-mode tactical feel)
 - **Icons**: Lucide React
-- **Audio**: Web Audio API (zero external assets required)
-- **Pathfinding**: Hazard-weighted A* Graph Algorithm
+- **Logic**: Custom hazard-weighted algorithms for pathfinding and risk assessment.
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Get It Running
+
+Want to spin it up yourself? It's easy.
 
 ### Prerequisites
 - Node.js (v18+)
 - npm or yarn
 
-### Installation & Run
+### Installation
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/<YOUR_USERNAME>/ai-mine-safety-dashboard.git
+git clone https://github.com/NishadSoney/NextGen-Mine-Safety.git
 
 # 2. Navigate to project directory
 cd ai-mine-safety-dashboard
@@ -63,18 +62,11 @@ cd ai-mine-safety-dashboard
 # 3. Install dependencies
 npm install
 
-# 4. Start local development server
+# 4. Start the local development server
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
-
-### Production Build
-
-```bash
-npm run build
-npm run preview
-```
+Then, just open [http://localhost:5173](http://localhost:5173) (or whichever port Vite gives you) in your browser and you're good to go!
 
 ---
 
