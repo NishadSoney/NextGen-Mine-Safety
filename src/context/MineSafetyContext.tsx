@@ -207,19 +207,34 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (!target) return;
 
     soundFX.playRadioBurst();
+    const startCoord: [number, number] = [robot.x, robot.y];
+    const targetCoord: [number, number] = [target.x, target.y];
+    const route = findSafestRescueRoute(startCoord, targetCoord, zones);
+    
     setRobot((prev) => ({
       ...prev,
       status: 'emergency_dispatch',
       targetWorkerId: workerId,
       targetCoords: [target.x, target.y],
+      currentRoute: route,
+      routeIndex: 0,
       currentMission: `Emergency Rescue Intercept -> ${target.name} (${target.id})`
     }));
 
-    calculateRescuePathToWorker(workerId);
+    setActiveRescueRoute(route);
+    soundFX.playRouteFound();
   };
 
   const toggleRobotDeployment = () => {
     soundFX.playBlip();
+    if (!isRobotDeployed) {
+      const criticalWorker = workers.find(w => w.status === 'critical');
+      if (criticalWorker) {
+        dispatchRobotToWorker(criticalWorker.id);
+      }
+    } else {
+      returnRobotToBase();
+    }
     setIsRobotDeployed((prev) => !prev);
     if (selectedRobot) {
       setSelectedRobot(null);
@@ -492,23 +507,55 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             battery: Math.max(10, prev.battery - 0.02)
           };
         } else if (prev.status === 'emergency_dispatch' && prev.targetCoords) {
-          // Navigate towards target
-          const angle = Math.atan2(prev.targetCoords[1] - prev.y, prev.targetCoords[0] - prev.x);
-          const dist = Math.hypot(prev.targetCoords[0] - prev.x, prev.targetCoords[1] - prev.y);
-          if (dist > 15) {
-            return {
-              ...prev,
-              x: prev.x + Math.cos(angle) * 2.4,
-              y: prev.y + Math.sin(angle) * 2.4,
-              heading: (Math.round((angle * 180) / Math.PI) + 360) % 360,
-              battery: Math.max(10, prev.battery - 0.04)
-            };
+          if (prev.currentRoute && prev.routeIndex !== undefined && prev.routeIndex < prev.currentRoute.length) {
+            const targetPoint = prev.currentRoute[prev.routeIndex];
+            const angle = Math.atan2(targetPoint[1] - prev.y, targetPoint[0] - prev.x);
+            const dist = Math.hypot(targetPoint[0] - prev.x, targetPoint[1] - prev.y);
+            
+            if (dist > 5) {
+              return {
+                ...prev,
+                x: prev.x + Math.cos(angle) * 2.4,
+                y: prev.y + Math.sin(angle) * 2.4,
+                heading: (Math.round((angle * 180) / Math.PI) + 360) % 360,
+                battery: Math.max(10, prev.battery - 0.04)
+              };
+            } else {
+              const nextIndex = prev.routeIndex + 1;
+              if (nextIndex < prev.currentRoute.length) {
+                return {
+                  ...prev,
+                  routeIndex: nextIndex,
+                  x: targetPoint[0],
+                  y: targetPoint[1]
+                };
+              } else {
+                return {
+                  ...prev,
+                  status: 'standby',
+                  currentMission: 'Target Intercept Reached — On-site Medical / Hazard Support Active'
+                };
+              }
+            }
           } else {
-            return {
-              ...prev,
-              status: 'standby',
-              currentMission: 'Target Intercept Reached — On-site Medical / Hazard Support Active'
-            };
+            // Navigate towards target (fallback)
+            const angle = Math.atan2(prev.targetCoords[1] - prev.y, prev.targetCoords[0] - prev.x);
+            const dist = Math.hypot(prev.targetCoords[0] - prev.x, prev.targetCoords[1] - prev.y);
+            if (dist > 15) {
+              return {
+                ...prev,
+                x: prev.x + Math.cos(angle) * 2.4,
+                y: prev.y + Math.sin(angle) * 2.4,
+                heading: (Math.round((angle * 180) / Math.PI) + 360) % 360,
+                battery: Math.max(10, prev.battery - 0.04)
+              };
+            } else {
+              return {
+                ...prev,
+                status: 'standby',
+                currentMission: 'Target Intercept Reached — On-site Medical / Hazard Support Active'
+              };
+            }
           }
         }
         return prev;
