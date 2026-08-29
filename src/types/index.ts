@@ -87,6 +87,8 @@ export interface RescueRobot {
   targetWorkerId: string | null;
   targetCoords: [number, number] | null;
   generatedMapPoints: Array<[number, number]>;
+  currentRoute?: Array<[number, number]>;
+  routeIndex?: number;
 }
 
 export interface FixedSensorNode {

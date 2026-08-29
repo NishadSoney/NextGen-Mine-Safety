@@ -276,7 +276,7 @@ export const INITIAL_WORKERS: Worker[] = [
 
 export const INITIAL_ROBOT: RescueRobot = {
   id: 'ROBOT-TITAN-01',
-  name: 'NextGen Bot-1',
+  name: 'Jiva-Bot1',
   model: 'ATEX Zone-0 Explosion-Proof UGV',
   status: 'patrol',
   x: 230,

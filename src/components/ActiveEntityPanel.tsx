@@ -17,7 +17,7 @@ import {
 import { getStatusColor } from '../utils/riskEngine';
 
 export const ActiveEntityPanel: React.FC = () => {
-  const { selectedWorker, selectedRobot, zones, pingEntity, updateWorkerVitals } = useMineSafety();
+  const { selectedWorker, selectedRobot, zones, pingEntity, updateWorkerVitals, dispatchRobotToWorker } = useMineSafety();
   const ecgCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // Animated Real-Time ECG Waveform for Worker
@@ -220,14 +220,24 @@ export const ActiveEntityPanel: React.FC = () => {
         </div>
 
         {/* Action Bottom Row */}
-        {(selectedWorker.status === 'warning' || selectedWorker.status === 'critical') && !selectedWorker.ignoredStatus && (
+        <div className="flex gap-2 mt-auto">
           <button
-            onClick={() => updateWorkerVitals(selectedWorker.id, { ignoredStatus: true })}
-            className="w-full mt-auto py-2 rounded border border-slate-700 bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-white text-[10px] font-bold font-mono transition-colors flex items-center justify-center gap-1.5"
+            onClick={() => dispatchRobotToWorker(selectedWorker.id)}
+            className="flex-1 py-2 rounded border border-amber-700 bg-amber-950/60 hover:bg-amber-900/80 text-amber-400 hover:text-white text-[10px] font-bold font-mono transition-colors flex items-center justify-center gap-1.5"
           >
-            IGNORE WARNING STATE
+            <Bot className="w-3.5 h-3.5" />
+            DEPLOY BOT
           </button>
-        )}
+          
+          {(selectedWorker.status === 'warning' || selectedWorker.status === 'critical') && !selectedWorker.ignoredStatus && (
+            <button
+              onClick={() => updateWorkerVitals(selectedWorker.id, { ignoredStatus: true })}
+              className="flex-1 py-2 rounded border border-slate-700 bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-white text-[10px] font-bold font-mono transition-colors flex items-center justify-center gap-1.5"
+            >
+              IGNORE WARNING
+            </button>
+          )}
+        </div>
       </div>
     );
   }
