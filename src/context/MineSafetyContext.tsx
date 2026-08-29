@@ -210,10 +210,11 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (!target) return;
 
     soundFX.playRadioBurst();
+    // Calculate precise route first
     const startCoord: [number, number] = [robot.x, robot.y];
     const targetCoord: [number, number] = [target.x, target.y];
     const route = findSafestRescueRoute(startCoord, targetCoord, zones);
-    
+    setActiveRescueRoute(route);
     setRobot((prev) => ({
       ...prev,
       status: 'emergency_dispatch',
@@ -223,22 +224,24 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       routeIndex: 0,
       currentMission: `Emergency Rescue Intercept -> ${target.name} (${target.id})`
     }));
-
-    setActiveRescueRoute(route);
     soundFX.playRouteFound();
   };
 
   const toggleRobotDeployment = () => {
     soundFX.playBlip();
-    if (!isRobotDeployed) {
-      const criticalWorker = workers.find(w => w.status === 'critical');
-      if (criticalWorker) {
-        dispatchRobotToWorker(criticalWorker.id);
+    setIsRobotDeployed((prev) => {
+      const isDeploying = !prev;
+      if (isDeploying) {
+        // Find a critical worker to automatically deploy to
+        const criticalWorker = workers.find(w => w.status === 'critical' || w.sosActive || w.fallDetected);
+        if (criticalWorker) {
+          setTimeout(() => dispatchRobotToWorker(criticalWorker.id), 100);
+        }
+      } else {
+        returnRobotToBase();
       }
-    } else {
-      returnRobotToBase();
-    }
-    setIsRobotDeployed((prev) => !prev);
+      return isDeploying;
+    });
     if (selectedRobot) {
       setSelectedRobot(null);
     }
