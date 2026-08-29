@@ -23,7 +23,9 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
     selectedRobot,
     isRobotDeployed,
     pingedEntityId,
-    dispatchRobotToWorker
+    dispatchRobotToWorker,
+    botSpeedMultiplier,
+    setBotSpeedMultiplier
   } = useMineSafety();
 
   const [hoveredWorker, setHoveredWorker] = useState<Worker | null>(null);
@@ -123,7 +125,7 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
         <div className="flex items-center space-x-1 pl-2 border-l border-slate-800">
           <button
             onClick={() => setZoomLevel((z) => Math.min(1.4, z + 0.1))}
-            className="w-6 h-6 rounded bg-slate-900 border border-slate-700 text-slate-200 hover:text-cyan-400 font-bold"
+            className="w-6 h-6 rounded bg-slate-900 border border-slate-700 text-slate-200 hover:text-cyan-400 font-bold flex items-center justify-center"
             title="Zoom In"
           >
             +
@@ -131,11 +133,30 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
           <span className="text-slate-400 px-1">{Math.round(zoomLevel * 100)}%</span>
           <button
             onClick={() => setZoomLevel((z) => Math.max(0.7, z - 0.1))}
-            className="w-6 h-6 rounded bg-slate-900 border border-slate-700 text-slate-200 hover:text-cyan-400 font-bold"
+            className="w-6 h-6 rounded bg-slate-900 border border-slate-700 text-slate-200 hover:text-cyan-400 font-bold flex items-center justify-center"
             title="Zoom Out"
           >
             -
           </button>
+        </div>
+
+        {/* Bot Speed Controls */}
+        <div className="flex items-center space-x-1 pl-2 ml-1 border-l border-slate-800">
+          <span className="text-slate-400 font-bold pr-1 text-[10px]">BOT SPEED:</span>
+          {[1, 2, 4, 6].map((speed) => (
+            <button
+              key={speed}
+              onClick={() => setBotSpeedMultiplier(speed)}
+              className={`w-6 h-6 rounded flex items-center justify-center font-bold text-[10px] transition-all ${
+                botSpeedMultiplier === speed
+                  ? 'bg-cyan-500 text-black shadow-[0_0_10px_rgba(0,240,255,0.4)] border border-cyan-400'
+                  : 'bg-slate-900 border border-slate-700 text-slate-400 hover:text-cyan-400 hover:border-cyan-700'
+              }`}
+              title={`Set Bot Speed to ${speed}x`}
+            >
+              {speed}x
+            </button>
+          ))}
         </div>
       </div>
 

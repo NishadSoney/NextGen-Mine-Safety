@@ -40,6 +40,7 @@ interface MineSafetyContextType {
   isResearchOpen: boolean;
   isRobotDeployed: boolean;
   radarSweepAngle: number;
+  botSpeedMultiplier: number;
   activeTab: 'dashboard' | 'radar' | 'workers' | 'robot' | 'sensors' | 'analytics' | 'research';
   searchFilter: string;
   statusFilter: 'all' | 'safe' | 'warning' | 'critical';
@@ -61,6 +62,7 @@ interface MineSafetyContextType {
   setActiveTab: (tab: 'dashboard' | 'radar' | 'workers' | 'robot' | 'sensors' | 'analytics' | 'research') => void;
   setSearchFilter: (query: string) => void;
   setStatusFilter: (filter: 'all' | 'safe' | 'warning' | 'critical') => void;
+  setBotSpeedMultiplier: (speed: number) => void;
   
   // Robot controls
   toggleRobotDeployment: () => void;
@@ -106,6 +108,7 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [isResearchOpen, setIsResearchOpen] = useState<boolean>(false);
   const [isRobotDeployed, setIsRobotDeployed] = useState<boolean>(true); // default true for demo
   const [radarSweepAngle, setRadarSweepAngle] = useState<number>(0);
+  const [botSpeedMultiplier, setBotSpeedMultiplier] = useState<number>(1);
   
   const [activeTab, setActiveTab] = useState<'dashboard' | 'radar' | 'workers' | 'robot' | 'sensors' | 'analytics' | 'research'>('dashboard');
   const [searchFilter, setSearchFilter] = useState<string>('');
@@ -497,8 +500,8 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           ];
           const currentTgt = targetPoints[Math.floor(Date.now() / 6000) % targetPoints.length];
           const angle = Math.atan2(currentTgt[1] - prev.y, currentTgt[0] - prev.x);
-          const nextX = prev.x + Math.cos(angle) * 1.2;
-          const nextY = prev.y + Math.sin(angle) * 1.2;
+          const nextX = prev.x + Math.cos(angle) * (1.2 * botSpeedMultiplier);
+          const nextY = prev.y + Math.sin(angle) * (1.2 * botSpeedMultiplier);
           return {
             ...prev,
             x: nextX,
@@ -507,45 +510,53 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             battery: Math.max(10, prev.battery - 0.02)
           };
         } else if (prev.status === 'emergency_dispatch' && prev.targetCoords) {
+          // Navigate towards target following the A* route strictly
           if (prev.currentRoute && prev.routeIndex !== undefined && prev.routeIndex < prev.currentRoute.length) {
-            const targetPoint = prev.currentRoute[prev.routeIndex];
-            const angle = Math.atan2(targetPoint[1] - prev.y, targetPoint[0] - prev.x);
-            const dist = Math.hypot(targetPoint[0] - prev.x, targetPoint[1] - prev.y);
-            
-            if (dist > 5) {
-              return {
-                ...prev,
-                x: prev.x + Math.cos(angle) * 2.4,
-                y: prev.y + Math.sin(angle) * 2.4,
-                heading: (Math.round((angle * 180) / Math.PI) + 360) % 360,
-                battery: Math.max(10, prev.battery - 0.04)
-              };
-            } else {
-              const nextIndex = prev.routeIndex + 1;
-              if (nextIndex < prev.currentRoute.length) {
+            const nextWaypoint = prev.currentRoute[prev.routeIndex];
+            const angle = Math.atan2(nextWaypoint[1] - prev.y, nextWaypoint[0] - prev.x);
+            const distToWaypoint = Math.hypot(nextWaypoint[0] - prev.x, nextWaypoint[1] - prev.y);
+
+            const speed = 2.4 * botSpeedMultiplier;
+
+            if (distToWaypoint <= speed) {
+              // Reached waypoint, move to next
+              const nextIdx = prev.routeIndex + 1;
+              if (nextIdx >= prev.currentRoute.length) {
+                // Reached final destination
                 return {
                   ...prev,
-                  routeIndex: nextIndex,
-                  x: targetPoint[0],
-                  y: targetPoint[1]
-                };
-              } else {
-                return {
-                  ...prev,
+                  x: nextWaypoint[0],
+                  y: nextWaypoint[1],
                   status: 'standby',
                   currentMission: 'Target Intercept Reached — On-site Medical / Hazard Support Active'
                 };
               }
+              return {
+                ...prev,
+                x: nextWaypoint[0],
+                y: nextWaypoint[1],
+                routeIndex: nextIdx,
+                battery: Math.max(10, prev.battery - 0.04)
+              };
+            } else {
+              // Move towards waypoint
+              return {
+                ...prev,
+                x: prev.x + Math.cos(angle) * speed,
+                y: prev.y + Math.sin(angle) * speed,
+                heading: (Math.round((angle * 180) / Math.PI) + 360) % 360,
+                battery: Math.max(10, prev.battery - 0.04)
+              };
             }
           } else {
-            // Navigate towards target (fallback)
+            // Fallback straight line
             const angle = Math.atan2(prev.targetCoords[1] - prev.y, prev.targetCoords[0] - prev.x);
             const dist = Math.hypot(prev.targetCoords[0] - prev.x, prev.targetCoords[1] - prev.y);
             if (dist > 15) {
               return {
                 ...prev,
-                x: prev.x + Math.cos(angle) * 2.4,
-                y: prev.y + Math.sin(angle) * 2.4,
+                x: prev.x + Math.cos(angle) * (2.4 * botSpeedMultiplier),
+                y: prev.y + Math.sin(angle) * (2.4 * botSpeedMultiplier),
                 heading: (Math.round((angle * 180) / Math.PI) + 360) % 360,
                 battery: Math.max(10, prev.battery - 0.04)
               };
@@ -573,7 +584,7 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }, 1200);
 
     return () => clearInterval(simInterval);
-  }, [isSimulating, zones]);
+  }, [isSimulating, zones, botSpeedMultiplier]);
 
   // Keep selected worker updated with live changes
   useEffect(() => {
@@ -605,6 +616,7 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         isResearchOpen,
         isRobotDeployed,
         radarSweepAngle,
+        botSpeedMultiplier,
         activeTab,
         searchFilter,
         statusFilter,
@@ -624,6 +636,7 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setActiveTab,
         setSearchFilter,
         setStatusFilter,
+        setBotSpeedMultiplier,
         toggleRobotDeployment,
         dispatchRobotToWorker,
         setRobotCameraMode,
