@@ -143,7 +143,7 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
         {/* Bot Speed Controls */}
         <div className="flex items-center space-x-1 pl-2 ml-1 border-l border-slate-800">
           <span className="text-slate-400 font-bold pr-1 text-[10px]">BOT SPEED:</span>
-          {[1, 2, 4, 6].map((speed) => (
+          {[1, 2, 4, 6, 8, 10].map((speed) => (
             <button
               key={speed}
               onClick={() => setBotSpeedMultiplier(speed)}
