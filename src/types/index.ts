@@ -16,7 +16,7 @@ export interface Worker {
   role: string;           // e.g. "Drill Specialist", "Safety Engineer", "Blasting Crew"
   bloodGroup: string;     // e.g. "O+", "A+", "B+"
   emergencyContact: string;
-  jacketId: string;       // e.g. "JKT-ALPHA-09"
+  jacketId: string;       // Legacy IoT device ID (kept for compatibility)
   zoneId: string;         // e.g. "ZONE-2"
   x: number;              // Map coordinate 0..1000
   y: number;              // Map coordinate 0..700
@@ -28,7 +28,7 @@ export interface Worker {
   co: number;             // Carbon Monoxide ppm (Normal: <25ppm, Warning: 25-50ppm, Critical: >50ppm)
   co2: number;            // CO2 % (Normal: <0.5%, Warning: 0.5-1.5%, Critical: >1.5%)
   o2: number;             // Oxygen % (Normal: 19.5-23.5%, Warning: 18.0-19.4%, Critical: <18.0%)
-  battery: number;        // Smart Jacket battery %
+  battery: number;        // Device battery %
   motionStatus: MotionStatus;
   sosActive: boolean;
   fallDetected: boolean;
@@ -38,6 +38,9 @@ export interface Worker {
   lastPing: string;
   history: VitalsHistoryPoint[];
   ignoredStatus?: boolean; // If true, UI suppresses warning/critical states
+  // Worker tracking essentials
+  hasMic: boolean;        // Whether mic channel is active
+  hasCamera: boolean;     // Whether camera feed is active
 }
 
 export interface MineZone {
@@ -110,6 +113,33 @@ export interface FixedSensorNode {
   battery: number;
 }
 
+// New: Sensor Boxes mounted on mine support beams
+export interface BeamSensorBox {
+  id: string;            // e.g. "BSB-001"
+  name: string;          // e.g. "Beam Sensor Box #1"
+  beamId: string;        // Support beam identifier
+  zoneId: string;        // Which zone this beam is in
+  x: number;             // Map coordinate
+  y: number;             // Map coordinate
+  // Environmental readings
+  ch4: number;           // Methane % vol
+  co: number;            // Carbon Monoxide ppm
+  co2: number;           // CO2 %
+  o2: number;            // Oxygen %
+  temperature: number;   // °C
+  humidity: number;      // %
+  // Structural readings
+  strain: number;        // Micro-strain on beam (normal: 0-200, warning: 200-400, critical: >400)
+  vibration: number;     // mm/s seismic vibration
+  tilt: number;          // Degrees of tilt (normal: 0-1°, warning: 1-3°, critical: >3°)
+  // Hardware status
+  battery: number;       // %
+  signalStrength: number; // 0..100
+  status: SafetyStatus;
+  lastTransmission: string; // Timestamp
+  isOnline: boolean;
+}
+
 export interface EmergencyIncident {
   id: string;
   title: string;
@@ -127,9 +157,10 @@ export interface EmergencyIncident {
 export interface AIAnomalyPrediction {
   id: string;
   timestamp: string;
-  type: 'gas_surge_prediction' | 'worker_cardiac_anomaly' | 'seismic_destabilization' | 'ventilation_choke' | 'cluster_risk';
+  type: 'gas_surge_prediction' | 'worker_cardiac_anomaly' | 'seismic_destabilization' | 'ventilation_choke' | 'cluster_risk' | 'beam_stress_prediction';
   targetZoneId?: string;
   targetWorkerId?: string;
+  targetSensorId?: string;
   confidence: number;    // % 0..100
   timeToCritical: string; // e.g. "3.5 mins"
   message: string;

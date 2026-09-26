@@ -13,7 +13,12 @@ import {
   Trash2, 
   Phone, 
   AlertTriangle, 
-  Send 
+  Send,
+  Mic,
+  MicOff,
+  Camera,
+  CameraOff,
+  Signal
 } from 'lucide-react';
 import { getStatusColor } from '../../utils/riskEngine';
 
@@ -121,7 +126,7 @@ export const WorkerDetailModal: React.FC = () => {
         {/* Header */}
         <div className="flex items-start justify-between border-b border-cyan-900/50 pb-4 mb-4">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 rounded-xl bg-cyan-950/80 border border-cyan-500/60 flex items-center justify-center text-cyan-400 font-bold text-lg font-mono">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-950/80 to-slate-900 border border-cyan-500/60 flex items-center justify-center text-cyan-400 font-bold text-lg font-mono shadow-[0_0_12px_rgba(0,240,255,0.15)]">
               {selectedWorker.id.replace('MINER-', '#')}
             </div>
             <div>
@@ -149,13 +154,13 @@ export const WorkerDetailModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Live Subterranean Location & Contact Bar */}
+        {/* Location & Contact Bar */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5 text-xs">
           <div className="bg-slate-950/70 border border-slate-800 p-3 rounded-lg flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <MapPin className="w-4 h-4 text-cyan-400" />
               <div>
-                <span className="text-slate-400 block text-[10px]">CURRENT ASSIGNED SECTOR</span>
+                <span className="text-slate-400 block text-[10px]">CURRENT LOCATION</span>
                 <span className="text-white font-bold">{currentZone ? currentZone.name : 'Unknown'}</span>
               </div>
             </div>
@@ -181,10 +186,10 @@ export const WorkerDetailModal: React.FC = () => {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center space-x-2">
               <Heart className="w-4 h-4 text-red-400 animate-pulse" />
-              <span className="text-xs font-bold text-slate-300">LIVE ECG TELEMETRY WAVEFORM (LEAD-II)</span>
+              <span className="text-xs font-bold text-slate-300">LIVE PULSE TELEMETRY (LEAD-II)</span>
             </div>
             <span className="text-xs text-cyan-400 font-bold">
-              SAMPLING RATE: 250 Hz (UWB MESH)
+              {selectedWorker.heartRate} BPM
             </span>
           </div>
           <canvas
@@ -195,7 +200,7 @@ export const WorkerDetailModal: React.FC = () => {
           />
         </div>
 
-        {/* Biometrics & Micro-climate Gas Grid */}
+        {/* Biometrics Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
           {/* Heart Rate */}
           <div className="bg-slate-950/80 border border-slate-800 p-3 rounded-xl">
@@ -206,7 +211,6 @@ export const WorkerDetailModal: React.FC = () => {
             <div className="text-xl font-bold text-white">
               {selectedWorker.heartRate} <span className="text-xs font-normal text-slate-400">BPM</span>
             </div>
-            <div className="text-[10px] text-slate-500 mt-1">Normal: 60-100 BPM</div>
           </div>
 
           {/* SpO2 */}
@@ -218,7 +222,6 @@ export const WorkerDetailModal: React.FC = () => {
             <div className="text-xl font-bold text-cyan-400">
               {selectedWorker.spO2}%
             </div>
-            <div className="text-[10px] text-slate-500 mt-1">Normal: 95-100%</div>
           </div>
 
           {/* Core Temperature */}
@@ -230,35 +233,45 @@ export const WorkerDetailModal: React.FC = () => {
             <div className="text-xl font-bold text-white">
               {selectedWorker.temperature.toFixed(1)}°C
             </div>
-            <div className="text-[10px] text-slate-500 mt-1">Normal: 36.5-37.5°C</div>
           </div>
 
-          {/* Micro-Climate Methane (CH4) */}
+          {/* Signal */}
           <div className="bg-slate-950/80 border border-slate-800 p-3 rounded-xl">
             <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
-              <span>AMBIENT CH₄</span>
-              <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+              <span>SIGNAL</span>
+              <Signal className="w-3.5 h-3.5 text-cyan-400" />
             </div>
             <div className="text-xl font-bold text-white">
-              {selectedWorker.ch4}% <span className="text-xs font-normal text-slate-400">vol</span>
+              {selectedWorker.signalStrength}%
             </div>
-            <div className="text-[10px] text-slate-500 mt-1">Threshold: &lt;1.0%</div>
           </div>
         </div>
 
-        {/* Smart Safety Jacket Hardware Status */}
+        {/* Mic, Camera & Motion Status */}
         <div className="bg-slate-950/70 border border-slate-800 p-3.5 rounded-xl mb-5 text-xs grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div>
-            <span className="text-slate-500 block text-[10px]">JACKET HARDWARE ID</span>
-            <span className="text-cyan-300 font-bold">{selectedWorker.jacketId}</span>
+            <span className="text-slate-500 block text-[10px]">MIC CHANNEL</span>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              {selectedWorker.hasMic ? (
+                <><Mic className="w-3.5 h-3.5 text-emerald-400" /><span className="text-emerald-400 font-bold">ACTIVE</span></>
+              ) : (
+                <><MicOff className="w-3.5 h-3.5 text-red-400" /><span className="text-red-400 font-bold">OFFLINE</span></>
+              )}
+            </div>
           </div>
           <div>
-            <span className="text-slate-500 block text-[10px]">BATTERY CAPACITY</span>
-            <span className="text-emerald-400 font-bold">{Math.round(selectedWorker.battery)}% (LiFePO4)</span>
+            <span className="text-slate-500 block text-[10px]">CAMERA FEED</span>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              {selectedWorker.hasCamera ? (
+                <><Camera className="w-3.5 h-3.5 text-emerald-400" /><span className="text-emerald-400 font-bold">STREAMING</span></>
+              ) : (
+                <><CameraOff className="w-3.5 h-3.5 text-red-400" /><span className="text-red-400 font-bold">OFFLINE</span></>
+              )}
+            </div>
           </div>
           <div>
-            <span className="text-slate-500 block text-[10px]">RF SIGNAL STRENGTH</span>
-            <span className="text-white font-bold">{selectedWorker.signalStrength}% (-68 dBm)</span>
+            <span className="text-slate-500 block text-[10px]">BATTERY</span>
+            <span className={`font-bold ${selectedWorker.battery < 20 ? 'text-red-400' : 'text-emerald-400'}`}>{Math.round(selectedWorker.battery)}%</span>
           </div>
           <div>
             <span className="text-slate-500 block text-[10px]">MOTION STATE</span>

@@ -24,6 +24,7 @@ export const Header: React.FC = () => {
   const {
     workers,
     incidents,
+    beamSensors,
     isSimulating,
     isAudioMuted,
     isEvacuationAlarmActive,
@@ -55,6 +56,7 @@ export const Header: React.FC = () => {
   const warningWorkers = workers.filter((w) => w.status === 'warning').length;
   const safeWorkers = workers.filter((w) => w.status === 'safe').length;
   const unresolvedIncidents = incidents.filter((i) => !i.resolved).length;
+  const onlineBeamSensors = beamSensors.filter((bs) => bs.isOnline).length;
 
   return (
     <header className="w-full bg-[#0a0f1c]/95 border-b border-cyan-900/40 backdrop-blur-md sticky top-0 z-40 px-4 py-2.5">
@@ -62,21 +64,21 @@ export const Header: React.FC = () => {
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Left: Branding & Mine System Identifier */}
         <div className="flex items-center space-x-3">
-          <div className="relative flex items-center justify-center w-10 h-10 rounded-lg bg-cyan-950/60 border border-cyan-500/40 text-cyan-400 shadow-[0_0_15px_rgba(0,240,255,0.2)]">
+          <div className="relative flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-950/80 to-emerald-950/60 border border-cyan-500/40 text-cyan-400 shadow-[0_0_20px_rgba(0,240,255,0.25)]">
             <Radio className="w-5 h-5 animate-pulse" />
-            <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+            <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
               <h1 className="text-xl font-bold tracking-wider text-white font-hud flex items-center gap-1.5">
-                NextGen<span className="text-cyan-400">Safety</span>
+                <span className="jiva-accent-gradient text-2xl">JIVA</span>
                 <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/30 text-cyan-300">
-                  v3.4-COMMAND
+                  v4.0-COMMAND
                 </span>
               </h1>
             </div>
             <p className="text-[11px] text-slate-400 font-mono flex items-center gap-2">
-              <span>DEEP EXTRACTION COMPLEX - SECTOR ALPHA</span>
+              <span>AI MINE SAFETY & RESCUE COMMAND CENTER</span>
               <span className="text-slate-600">|</span>
               <span className="text-cyan-400/80 font-bold">{timeStr}</span>
             </p>
@@ -95,9 +97,18 @@ export const Header: React.FC = () => {
             <span>WARN: <b>{warningWorkers}</b></span>
           </div>
           <span className="text-slate-700">|</span>
-          <div className="flex items-center gap-1.5 text-red-400">
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+          <div className={`flex items-center gap-1.5 ${criticalWorkers > 0 ? 'text-red-400' : 'text-slate-500'}`}>
+            {criticalWorkers > 0 ? (
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+            ) : (
+              <span className="w-2 h-2 rounded-full bg-slate-600" />
+            )}
             <span>CRITICAL: <b>{criticalWorkers}</b></span>
+          </div>
+          <span className="text-slate-700">|</span>
+          <div className="flex items-center gap-1.5 text-cyan-400">
+            <Cpu className="w-3 h-3" />
+            <span>SENSORS: <b>{onlineBeamSensors}/{beamSensors.length}</b></span>
           </div>
           {unresolvedIncidents > 0 && (
             <>

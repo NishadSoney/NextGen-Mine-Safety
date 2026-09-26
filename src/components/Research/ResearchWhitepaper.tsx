@@ -63,15 +63,15 @@ export const ResearchWhitepaper: React.FC = () => {
             </button>
 
             <button
-              onClick={() => setActiveSection('jackets')}
+              onClick={() => setActiveSection('sensors_iot')}
               className={`w-full text-left px-3 py-2 rounded-lg font-semibold flex items-center gap-2 transition-all ${
-                activeSection === 'jackets'
+                activeSection === 'sensors_iot'
                   ? 'bg-cyan-950 text-cyan-300 border border-cyan-500/50'
                   : 'text-slate-400 hover:text-white hover:bg-slate-900'
               }`}
             >
               <Cpu className="w-4 h-4 text-emerald-400" />
-              <span>2. Smart Safety Jackets</span>
+              <span>2. Sensor & IoT Hardware</span>
             </button>
 
             <button
@@ -162,7 +162,7 @@ export const ResearchWhitepaper: React.FC = () => {
                   <div className="flex items-start gap-2">
                     <span className="w-5 h-5 rounded bg-cyan-950 text-cyan-400 flex items-center justify-center font-bold">1</span>
                     <div>
-                      <b className="text-white">Edge Sensor Tier:</b> Smart Safety Jackets (wearable PPG/ECG, NDIR CH4 sensors, 6-DoF IMU), stationary explosion-proof gas hubs, and autonomous UGV rovers.
+                      <b className="text-white">Edge Sensor Tier:</b> Worker wearable devices (PPG/ECG, mic, camera), beam-mounted sensor boxes (NDIR CH4 sensors, strain gauges, tilt sensors), stationary explosion-proof gas hubs, and autonomous UGV rovers.
                     </div>
                   </div>
                   <div className="flex items-start gap-2">
@@ -187,13 +187,13 @@ export const ResearchWhitepaper: React.FC = () => {
               </div>
             )}
 
-            {activeSection === 'jackets' && (
+            {activeSection === 'sensors_iot' && (
               <div className="space-y-4">
                 <h3 className="text-base font-bold text-emerald-300 font-hud border-b border-slate-800 pb-2">
-                  2. Smart Safety Jacket Hardware & Sensor Integration
+                  2. Sensor & IoT Hardware Architecture
                 </h3>
                 <p className="text-slate-300">
-                  Every miner wears an intrinsically safe (IS) smart jacket equipped with multi-sensor arrays powered by a 72-hour intrinsically safe LiFePO4 battery pack:
+                  JIVA employs a multi-tier sensor network including worker wearable devices, beam-mounted sensor boxes on mine support structures, and fixed atmospheric monitoring stations:
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
@@ -248,7 +248,7 @@ export const ResearchWhitepaper: React.FC = () => {
                   <div className="bg-slate-950 p-3.5 rounded-lg border border-slate-800 font-mono">
                     <b className="text-cyan-400 block mb-1">MQTT Topic Architecture:</b>
                     <div className="text-slate-400 space-y-1">
-                      <div><code>mine/telemetry/jacket/&#123;worker_id&#125;/vitals</code> (QoS 1, Every 1.0s)</div>
+                      <div><code>mine/telemetry/worker/&#123;worker_id&#125;/vitals</code> (QoS 1, Every 1.0s)</div>
                       <div><code>mine/telemetry/robot/&#123;robot_id&#125;/telemetry</code> (QoS 0, 10 Hz)</div>
                       <div><code>mine/alerts/emergency/broadcast</code> (QoS 2, Exact Once Delivery)</div>
                     </div>
@@ -292,7 +292,7 @@ export const ResearchWhitepaper: React.FC = () => {
                 </h3>
                 <div className="space-y-3 text-xs text-slate-300">
                   <p>
-                    Since GPS cannot penetrate underground rock strata, the system employs <b>Ultra-Wideband (UWB) Time Difference of Arrival (TDoA)</b> combined with Dead Reckoning on smart jackets to achieve <b>±0.3m accuracy</b> throughout all shafts.
+                    Since GPS cannot penetrate underground rock strata, JIVA employs <b>Ultra-Wideband (UWB) Time Difference of Arrival (TDoA)</b> combined with Dead Reckoning on worker devices to achieve <b>±0.3m accuracy</b> throughout all shafts.
                   </p>
 
                   <div className="bg-slate-950 p-3.5 rounded-lg border border-slate-800">

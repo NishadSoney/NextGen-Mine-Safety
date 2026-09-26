@@ -16,6 +16,8 @@
   }
 }
 
+/* ====== JIVA Global Design System ====== */
+
 /* Tactical HUD styling & utilities */
 .hud-panel {
   background: linear-gradient(135deg, rgba(16, 23, 38, 0.85) 0%, rgba(10, 15, 26, 0.95) 100%);
@@ -104,4 +106,58 @@
 }
 .glow-red {
   text-shadow: 0 0 10px rgba(255, 51, 102, 0.8);
+}
+
+/* ====== JIVA Sensor Box Styles ====== */
+.sensor-box-card {
+  background: linear-gradient(145deg, rgba(10, 17, 32, 0.92) 0%, rgba(8, 12, 20, 0.97) 100%);
+  border: 1px solid rgba(0, 240, 255, 0.12);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(0, 240, 255, 0.05);
+  transition: all 0.3s ease;
+}
+.sensor-box-card:hover {
+  border-color: rgba(0, 240, 255, 0.35);
+  box-shadow: 0 8px 32px rgba(0, 240, 255, 0.08), inset 0 1px 0 rgba(0, 240, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Animated data pulse ring on sensor nodes */
+@keyframes sensorPulse {
+  0% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.4); opacity: 0.2; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+.sensor-pulse-ring {
+  animation: sensorPulse 2s ease-out infinite;
+}
+
+/* JIVA brand accent gradient */
+.jiva-accent-gradient {
+  background: linear-gradient(135deg, #00f0ff 0%, #00ff88 50%, #38bdf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Smooth card entrance animations */
+@keyframes cardSlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-card-in {
+  animation: cardSlideUp 0.4s ease-out forwards;
+}
+
+/* Worker info panel glow */
+.worker-info-glow {
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.06), inset 0 0 30px rgba(0, 240, 255, 0.02);
+}
+
+/* Support beam sensor node on map */
+@keyframes beamSensorBlink {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+.beam-sensor-blink {
+  animation: beamSensorBlink 3s ease-in-out infinite;
 }

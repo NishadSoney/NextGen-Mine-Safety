@@ -82,7 +82,7 @@ export const HazardSimulator: React.FC = () => {
             </span>
           </div>
           <h4 className="text-xs font-bold text-white font-hud">MANUAL SOS BEACON</h4>
-          <p className="text-[10px] text-slate-400 mt-1">Trigger Smart Jacket Distress</p>
+          <p className="text-[10px] text-slate-400 mt-1">Trigger Worker Distress Signal</p>
         </button>
       </div>
     </div>

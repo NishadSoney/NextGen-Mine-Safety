@@ -4,6 +4,7 @@ import {
   MineZone, 
   RescueRobot, 
   FixedSensorNode, 
+  BeamSensorBox,
   EmergencyIncident, 
   AIAnomalyPrediction, 
   CameraMode, 
@@ -15,6 +16,7 @@ import {
   INITIAL_ZONES, 
   INITIAL_ROBOT, 
   INITIAL_FIXED_SENSORS, 
+  INITIAL_BEAM_SENSORS,
   INITIAL_INCIDENTS, 
   INITIAL_ANOMALIES 
 } from '../data/mockMineData';
@@ -27,12 +29,14 @@ interface MineSafetyContextType {
   zones: MineZone[];
   robot: RescueRobot;
   fixedSensors: FixedSensorNode[];
+  beamSensors: BeamSensorBox[];
   incidents: EmergencyIncident[];
   anomalies: AIAnomalyPrediction[];
   activeRescueRoute: Array<[number, number]> | null;
   selectedWorker: Worker | null;
   selectedRobot: RescueRobot | null;
   selectedZone: MineZone | null;
+  selectedBeamSensor: BeamSensorBox | null;
   isSimulating: boolean;
   isAudioMuted: boolean;
   isEvacuationAlarmActive: boolean;
@@ -54,6 +58,7 @@ interface MineSafetyContextType {
   selectWorker: (worker: Worker | null) => void;
   selectRobot: (robot: RescueRobot | null) => void;
   selectZone: (zone: MineZone | null) => void;
+  selectBeamSensor: (sensor: BeamSensorBox | null) => void;
   toggleSimulating: () => void;
   toggleAudioMute: () => void;
   toggleEvacuationAlarm: () => void;
@@ -90,16 +95,16 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [zones, setZones] = useState<MineZone[]>(INITIAL_ZONES);
   const [robot, setRobot] = useState<RescueRobot>(INITIAL_ROBOT);
   const [fixedSensors, setFixedSensors] = useState<FixedSensorNode[]>(INITIAL_FIXED_SENSORS);
+  const [beamSensors, setBeamSensors] = useState<BeamSensorBox[]>(INITIAL_BEAM_SENSORS);
   const [incidents, setIncidents] = useState<EmergencyIncident[]>(INITIAL_INCIDENTS);
   const [anomalies, setAnomalies] = useState<AIAnomalyPrediction[]>(INITIAL_ANOMALIES);
   
-  const [activeRescueRoute, setActiveRescueRoute] = useState<Array<[number, number]> | null>(
-    INITIAL_INCIDENTS[0]?.safestRescueRoute || null
-  );
+  const [activeRescueRoute, setActiveRescueRoute] = useState<Array<[number, number]> | null>(null);
   
   const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
   const [selectedRobot, setSelectedRobot] = useState<RescueRobot | null>(null);
   const [selectedZone, setSelectedZone] = useState<MineZone | null>(null);
+  const [selectedBeamSensor, setSelectedBeamSensor] = useState<BeamSensorBox | null>(null);
   
   const [isSimulating, setIsSimulating] = useState<boolean>(true);
   const [isAudioMuted, setIsAudioMuted] = useState<boolean>(false);
@@ -352,7 +357,7 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         timestamp,
         affectedWorkerIds: ['MINER-108'],
         zoneId: 'ZONE-2',
-        description: 'Smart safety jacket 3-axis accelerometer registered sudden impact (7.2G) followed by complete cessation of movement.',
+        description: 'Accelerometer registered sudden impact (7.2G) followed by complete cessation of movement.',
         hazardMetrics: 'Zero Motion | HR: 128 BPM | SpO2: 96%',
         safestRescueRoute: findSafestRescueRoute([230, 130], [710, 190], zones),
         resolved: false
@@ -397,7 +402,7 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         timestamp,
         affectedWorkerIds: ['MINER-115'],
         zoneId: 'ZONE-4',
-        description: 'Manual distress beacon triggered from Smart Safety Jacket JKT-AL-15 in Sector 4 Exhaust Adit.',
+        description: 'Manual distress beacon triggered from worker device in Sector 4 Exhaust Adit.',
         hazardMetrics: 'SOS Distress Signal Latched | Signal: 92%',
         safestRescueRoute: findSafestRescueRoute([230, 130], [350, 440], zones),
         resolved: false
@@ -413,10 +418,12 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setZones(INITIAL_ZONES);
     setRobot(INITIAL_ROBOT);
     setFixedSensors(INITIAL_FIXED_SENSORS);
+    setBeamSensors(INITIAL_BEAM_SENSORS);
     setIncidents(INITIAL_INCIDENTS);
     setAnomalies(INITIAL_ANOMALIES);
-    setActiveRescueRoute(INITIAL_INCIDENTS[0]?.safestRescueRoute || null);
+    setActiveRescueRoute(null);
     setSelectedWorker(null);
+    setSelectedBeamSensor(null);
     setIsEvacuationAlarmActive(false);
   };
 
@@ -584,6 +591,21 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           vibration: Number(Math.max(0.1, s.vibration + (Math.random() - 0.5) * 0.08).toFixed(1))
         }))
       );
+
+      // 4. Beam Sensor Boxes micro-fluctuations
+      setBeamSensors((prevBeamSensors) =>
+        prevBeamSensors.map((bs) => ({
+          ...bs,
+          ch4: Number(Math.max(0.01, bs.ch4 + (Math.random() - 0.49) * 0.015).toFixed(2)),
+          co: Number(Math.max(1, bs.co + (Math.random() - 0.49) * 0.5).toFixed(0)),
+          temperature: Number(Math.max(18, bs.temperature + (Math.random() - 0.5) * 0.08).toFixed(1)),
+          humidity: Number(Math.max(40, Math.min(95, bs.humidity + (Math.random() - 0.5) * 0.3)).toFixed(0)),
+          strain: Number(Math.max(20, bs.strain + (Math.random() - 0.5) * 2).toFixed(0)),
+          vibration: Number(Math.max(0.05, bs.vibration + (Math.random() - 0.5) * 0.06).toFixed(1)),
+          tilt: Number(Math.max(0, bs.tilt + (Math.random() - 0.5) * 0.02).toFixed(1)),
+          lastTransmission: 'Just now'
+        }))
+      );
     }, 1200);
 
     return () => clearInterval(simInterval);
@@ -599,6 +621,16 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, [workers]);
 
+  // Keep selected beam sensor updated with live changes
+  useEffect(() => {
+    if (selectedBeamSensor) {
+      const updated = beamSensors.find((bs) => bs.id === selectedBeamSensor.id);
+      if (updated) {
+        setSelectedBeamSensor(updated);
+      }
+    }
+  }, [beamSensors]);
+
   return (
     <MineSafetyContext.Provider
       value={{
@@ -606,12 +638,14 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         zones,
         robot,
         fixedSensors,
+        beamSensors,
         incidents,
         anomalies,
         activeRescueRoute,
         selectedWorker,
         selectedRobot,
         selectedZone,
+        selectedBeamSensor,
         isSimulating,
         isAudioMuted,
         isEvacuationAlarmActive,
@@ -628,9 +662,10 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         addWorker,
         removeWorker,
         updateWorkerVitals,
-        selectWorker: (w) => { setSelectedWorker(w); setSelectedRobot(null); },
-        selectRobot: (r) => { setSelectedRobot(r); setSelectedWorker(null); },
+        selectWorker: (w) => { setSelectedWorker(w); setSelectedRobot(null); setSelectedBeamSensor(null); },
+        selectRobot: (r) => { setSelectedRobot(r); setSelectedWorker(null); setSelectedBeamSensor(null); },
         selectZone: setSelectedZone,
+        selectBeamSensor: (bs) => { setSelectedBeamSensor(bs); setSelectedWorker(null); setSelectedRobot(null); },
         toggleSimulating,
         toggleAudioMute,
         toggleEvacuationAlarm,

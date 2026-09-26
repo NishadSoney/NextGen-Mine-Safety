@@ -12,12 +12,19 @@ import {
   Radio,
   Compass,
   Flame,
-  Camera
+  Camera,
+  Mic,
+  MicOff,
+  CameraOff,
+  Activity,
+  Wifi,
+  Signal,
+  Cpu
 } from 'lucide-react';
 import { getStatusColor } from '../utils/riskEngine';
 
 export const ActiveEntityPanel: React.FC = () => {
-  const { selectedWorker, selectedRobot, zones, pingEntity, updateWorkerVitals, dispatchRobotToWorker } = useMineSafety();
+  const { selectedWorker, selectedRobot, selectedBeamSensor, zones, pingEntity, updateWorkerVitals, dispatchRobotToWorker } = useMineSafety();
   const ecgCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // Animated Real-Time ECG Waveform for Worker
@@ -97,17 +104,18 @@ export const ActiveEntityPanel: React.FC = () => {
     };
   }, [selectedWorker]);
 
-  if (!selectedWorker && !selectedRobot) {
+  if (!selectedWorker && !selectedRobot && !selectedBeamSensor) {
     return (
       <div className="w-full h-full min-h-[500px] flex items-center justify-center bg-[#070b14]/50 rounded-xl border border-slate-800/50 p-6 backdrop-blur-sm">
         <div className="text-center text-slate-500 font-mono">
           <Bot className="w-12 h-12 mx-auto mb-4 opacity-30" />
-          <p className="text-sm">SELECT A WORKER OR BOT<br/>TO VIEW STATS</p>
+          <p className="text-sm">SELECT A WORKER, BOT<br/>OR SENSOR TO VIEW DETAILS</p>
         </div>
       </div>
     );
   }
 
+  // ======== WORKER PANEL (simplified: location, pulse, mic, camera) ========
   if (selectedWorker) {
     const currentZone = zones.find((z) => z.id === selectedWorker.zoneId);
     const colors = getStatusColor(selectedWorker.status);
@@ -118,14 +126,14 @@ export const ActiveEntityPanel: React.FC = () => {
       ? 'bg-red-950/40 border-red-900/50 shadow-[0_0_30px_rgba(255,0,0,0.1)]'
       : isWarning
       ? 'bg-orange-950/40 border-orange-900/50 shadow-[0_0_30px_rgba(255,165,0,0.1)]'
-      : 'bg-[#090e1a]/90 border-cyan-900/50 shadow-[0_0_30px_rgba(0,240,255,0.05)]';
+      : 'bg-[#090e1a]/90 border-cyan-900/50 worker-info-glow';
 
     return (
       <div className={`w-full h-full min-h-[500px] backdrop-blur-md rounded-xl border p-4 font-mono text-slate-200 overflow-y-auto ${panelBgClass}`}>
         {/* Header */}
         <div className="flex items-start justify-between border-b border-cyan-900/50 pb-4 mb-4">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 rounded-xl bg-cyan-950/80 border border-cyan-500/60 flex flex-shrink-0 items-center justify-center text-cyan-400 font-bold text-lg">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-950/80 to-slate-900 border border-cyan-500/60 flex flex-shrink-0 items-center justify-center text-cyan-400 font-bold text-lg shadow-[0_0_12px_rgba(0,240,255,0.15)]">
               {selectedWorker.id.replace('MINER-', '#')}
             </div>
             <div>
@@ -154,69 +162,111 @@ export const ActiveEntityPanel: React.FC = () => {
           </button>
         </div>
 
-        {/* Location & Contact */}
-        <div className="grid grid-cols-1 gap-2 mb-4 text-xs">
-          <div className="bg-slate-950/70 border border-slate-800 p-2.5 rounded-lg flex justify-between items-center">
+        {/* LOCATION — Primary info */}
+        <div className="mb-4">
+          <div className="bg-slate-950/70 border border-slate-800 p-3 rounded-xl flex justify-between items-center">
             <div className="flex items-center space-x-2">
-              <MapPin className={`w-3.5 h-3.5 ${isCritical ? 'text-red-400' : isWarning ? 'text-orange-400' : 'text-cyan-400'}`} />
-              <span>{currentZone ? currentZone.name : 'Unknown'}</span>
+              <MapPin className={`w-4 h-4 ${isCritical ? 'text-red-400' : isWarning ? 'text-orange-400' : 'text-cyan-400'}`} />
+              <div>
+                <span className="text-[9px] text-slate-500 block">LOCATION</span>
+                <span className="text-sm text-white font-bold">{currentZone ? currentZone.name : 'Unknown'}</span>
+              </div>
             </div>
-            <span className={`${isCritical ? 'text-red-400 bg-red-950/60' : isWarning ? 'text-orange-400 bg-orange-950/60' : 'text-cyan-400 bg-cyan-950/60'} px-1.5 py-0.5 rounded text-[10px]`}>
-              {currentZone ? `${currentZone.depthLevel}m` : ''}
-            </span>
-          </div>
-          <div className="bg-slate-950/70 border border-slate-800 p-2.5 rounded-lg flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <Phone className="w-3.5 h-3.5 text-emerald-400" />
-              <span>{selectedWorker.emergencyContact}</span>
+            <div className="text-right">
+              <span className={`${isCritical ? 'text-red-400 bg-red-950/60' : isWarning ? 'text-orange-400 bg-orange-950/60' : 'text-cyan-400 bg-cyan-950/60'} px-2 py-1 rounded text-[10px] font-bold`}>
+                {currentZone ? `${currentZone.depthLevel}m` : ''}
+              </span>
+              <div className="text-[9px] text-slate-500 mt-0.5">
+                X: {Math.round(selectedWorker.x)} Y: {Math.round(selectedWorker.y)}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* ECG */}
-        <div className="bg-slate-950 border border-cyan-900/60 rounded-xl p-3 mb-4 shadow-[0_0_15px_rgba(0,240,255,0.05)]">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center space-x-1.5">
-              <Heart className="w-3 h-3 text-red-400 animate-pulse" />
-              <span className="text-[10px] font-bold text-slate-300">LIVE ECG</span>
+        {/* PULSE / Heart Rate — ECG + BPM */}
+        <div className="mb-4">
+          <div className="bg-slate-950 border border-cyan-900/60 rounded-xl p-3 shadow-[0_0_15px_rgba(0,240,255,0.05)]">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-1.5">
+                <Heart className="w-3.5 h-3.5 text-red-400 animate-pulse" />
+                <span className="text-[10px] font-bold text-slate-300">PULSE MONITOR</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`text-lg font-bold ${selectedWorker.heartRate > 105 ? 'text-red-400' : 'text-emerald-400'}`}>
+                  {selectedWorker.heartRate}
+                </span>
+                <span className="text-[10px] text-slate-500">BPM</span>
+              </div>
+            </div>
+            <canvas ref={ecgCanvasRef} width={300} height={60} className="w-full h-[60px] rounded bg-[#050810] border border-cyan-950" />
+            <div className="flex items-center justify-between mt-2 text-[10px]">
+              <span className="text-slate-500">SpO₂: <b className={selectedWorker.spO2 < 93 ? 'text-red-400' : 'text-cyan-400'}>{selectedWorker.spO2}%</b></span>
+              <span className="text-slate-500">Temp: <b className="text-white">{selectedWorker.temperature.toFixed(1)}°C</b></span>
             </div>
           </div>
-          <canvas ref={ecgCanvasRef} width={300} height={60} className="w-full h-[60px] rounded bg-[#050810] border border-cyan-950" />
         </div>
 
-        {/* Biometrics Grid */}
+        {/* MIC & CAMERA Status */}
         <div className="grid grid-cols-2 gap-2 mb-4">
-          <div className="bg-slate-950/80 border border-slate-800 p-2.5 rounded-xl transition-all hover:border-red-900/50">
-            <div className="flex justify-between text-slate-400 text-[10px] mb-1">
-              <span>HEART RATE</span><Heart className="w-3 h-3 text-red-400" />
+          <div className={`bg-slate-950/80 border rounded-xl p-3 transition-all ${
+            selectedWorker.hasMic ? 'border-emerald-800/50 hover:border-emerald-600/60' : 'border-slate-800 hover:border-red-900/50'
+          }`}>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] text-slate-400 font-bold">MIC CHANNEL</span>
+              {selectedWorker.hasMic ? (
+                <Mic className="w-3.5 h-3.5 text-emerald-400" />
+              ) : (
+                <MicOff className="w-3.5 h-3.5 text-red-400" />
+              )}
             </div>
-            <div className="text-lg font-bold text-white">{selectedWorker.heartRate} <span className="text-[10px] font-normal text-slate-500">BPM</span></div>
+            <div className={`text-sm font-bold ${selectedWorker.hasMic ? 'text-emerald-400' : 'text-red-400'}`}>
+              {selectedWorker.hasMic ? 'ACTIVE' : 'OFFLINE'}
+            </div>
+            <div className="text-[9px] text-slate-500 mt-0.5">
+              {selectedWorker.hasMic ? 'Audio Link Established' : 'No Audio Feed'}
+            </div>
           </div>
-          <div className="bg-slate-950/80 border border-slate-800 p-2.5 rounded-xl transition-all hover:border-cyan-900/50">
-            <div className="flex justify-between text-slate-400 text-[10px] mb-1">
-              <span>SPO₂</span><Droplets className="w-3 h-3 text-cyan-400" />
+
+          <div className={`bg-slate-950/80 border rounded-xl p-3 transition-all ${
+            selectedWorker.hasCamera ? 'border-emerald-800/50 hover:border-emerald-600/60' : 'border-slate-800 hover:border-red-900/50'
+          }`}>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] text-slate-400 font-bold">CAMERA FEED</span>
+              {selectedWorker.hasCamera ? (
+                <Camera className="w-3.5 h-3.5 text-emerald-400" />
+              ) : (
+                <CameraOff className="w-3.5 h-3.5 text-red-400" />
+              )}
             </div>
-            <div className="text-lg font-bold text-cyan-400">{selectedWorker.spO2}%</div>
-          </div>
-          <div className="bg-slate-950/80 border border-slate-800 p-2.5 rounded-xl transition-all hover:border-amber-900/50">
-            <div className="flex justify-between text-slate-400 text-[10px] mb-1">
-              <span>TEMP</span><Thermometer className="w-3 h-3 text-amber-400" />
+            <div className={`text-sm font-bold ${selectedWorker.hasCamera ? 'text-emerald-400' : 'text-red-400'}`}>
+              {selectedWorker.hasCamera ? 'STREAMING' : 'OFFLINE'}
             </div>
-            <div className="text-lg font-bold text-white">{selectedWorker.temperature.toFixed(1)}°C</div>
-          </div>
-          <div className="bg-slate-950/80 border border-slate-800 p-2.5 rounded-xl transition-all hover:border-red-900/50">
-            <div className="flex justify-between text-slate-400 text-[10px] mb-1">
-              <span>CH₄</span><AlertTriangle className="w-3 h-3 text-red-400" />
+            <div className="text-[9px] text-slate-500 mt-0.5">
+              {selectedWorker.hasCamera ? 'Video Link Active' : 'No Video Feed'}
             </div>
-            <div className="text-lg font-bold text-white">{selectedWorker.ch4}% <span className="text-[10px] font-normal text-slate-500">vol</span></div>
           </div>
         </div>
 
-        {/* Hardware Status */}
-        <div className="bg-slate-950/70 border border-slate-800 p-3 rounded-xl text-[10px] grid grid-cols-2 gap-2 mb-4">
-          <div><span className="text-slate-500 block">BATT</span><span className="text-emerald-400 font-bold">{Math.round(selectedWorker.battery)}%</span></div>
-          <div><span className="text-slate-500 block">SIGNAL</span><span className="text-white font-bold">{selectedWorker.signalStrength}%</span></div>
-          <div className="col-span-2"><span className="text-slate-500 block">MOTION</span><span className="text-cyan-400 font-bold uppercase">{selectedWorker.motionStatus.replace('_', ' ')}</span></div>
+        {/* Device & Signal Status */}
+        <div className="bg-slate-950/70 border border-slate-800 p-3 rounded-xl text-[10px] grid grid-cols-3 gap-2 mb-4">
+          <div>
+            <span className="text-slate-500 block">BATTERY</span>
+            <div className="flex items-center gap-1 mt-0.5">
+              <Battery className="w-3 h-3 text-emerald-400" />
+              <span className={`font-bold ${selectedWorker.battery < 20 ? 'text-red-400' : 'text-emerald-400'}`}>{Math.round(selectedWorker.battery)}%</span>
+            </div>
+          </div>
+          <div>
+            <span className="text-slate-500 block">SIGNAL</span>
+            <div className="flex items-center gap-1 mt-0.5">
+              <Signal className="w-3 h-3 text-cyan-400" />
+              <span className="text-white font-bold">{selectedWorker.signalStrength}%</span>
+            </div>
+          </div>
+          <div>
+            <span className="text-slate-500 block">MOTION</span>
+            <span className="text-cyan-400 font-bold uppercase mt-0.5 block">{selectedWorker.motionStatus.replace('_', ' ')}</span>
+          </div>
         </div>
 
         {/* Action Bottom Row */}
@@ -242,13 +292,139 @@ export const ActiveEntityPanel: React.FC = () => {
     );
   }
 
+  // ======== BEAM SENSOR PANEL ========
+  if (selectedBeamSensor) {
+    const sensorZone = zones.find((z) => z.id === selectedBeamSensor.zoneId);
+    const strainStatus = selectedBeamSensor.strain > 400 ? 'critical' : selectedBeamSensor.strain > 200 ? 'warning' : 'safe';
+    const tiltStatus = selectedBeamSensor.tilt > 3 ? 'critical' : selectedBeamSensor.tilt > 1 ? 'warning' : 'safe';
+
+    return (
+      <div className="w-full h-full min-h-[500px] bg-[#090e1a]/90 backdrop-blur-md rounded-xl border border-cyan-900/50 p-4 font-mono text-slate-200 overflow-y-auto worker-info-glow">
+        {/* Header */}
+        <div className="flex items-start justify-between border-b border-cyan-900/50 pb-4 mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-950/80 to-cyan-950/60 border border-indigo-500/50 flex items-center justify-center text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.2)]">
+              <Cpu className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-white tracking-wide">{selectedBeamSensor.name}</h3>
+              <div className="flex items-center gap-2 mt-1">
+                <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold border ${
+                  selectedBeamSensor.isOnline ? 'bg-emerald-950 border-emerald-500/40 text-emerald-300' : 'bg-red-950 border-red-500/40 text-red-300'
+                }`}>
+                  {selectedBeamSensor.isOnline ? 'ONLINE' : 'OFFLINE'}
+                </span>
+                <span className="text-[10px] text-slate-400">Beam: {selectedBeamSensor.beamId}</span>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => pingEntity(selectedBeamSensor.id)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-950/50 hover:bg-cyan-900/80 border border-cyan-500/40 text-cyan-300 rounded text-[10px] font-bold transition-all shadow-[0_0_10px_rgba(0,240,255,0.15)]"
+          >
+            <Radio className="w-3 h-3" />
+            PING
+          </button>
+        </div>
+
+        {/* Location */}
+        <div className="bg-slate-950/70 border border-slate-800 p-2.5 rounded-lg flex justify-between items-center mb-4">
+          <div className="flex items-center space-x-2">
+            <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="text-xs">{sensorZone ? sensorZone.name : 'Unknown'}</span>
+          </div>
+          <span className="text-cyan-400 bg-cyan-950/60 px-1.5 py-0.5 rounded text-[10px]">
+            {sensorZone ? `${sensorZone.depthLevel}m` : ''}
+          </span>
+        </div>
+
+        {/* Structural Integrity */}
+        <div className="bg-slate-900/80 border border-slate-800 p-3 rounded-xl mb-4">
+          <h4 className="text-[10px] font-bold text-cyan-300 mb-2 flex items-center gap-1.5">
+            <Activity className="w-3 h-3 text-indigo-400" />
+            STRUCTURAL INTEGRITY
+          </h4>
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="bg-slate-950 p-2.5 rounded border border-slate-800">
+              <span className="text-slate-500 block text-[9px]">STRAIN</span>
+              <span className={`font-bold ${strainStatus === 'critical' ? 'text-red-400' : strainStatus === 'warning' ? 'text-amber-400' : 'text-emerald-400'}`}>
+                {selectedBeamSensor.strain} µε
+              </span>
+            </div>
+            <div className="bg-slate-950 p-2.5 rounded border border-slate-800">
+              <span className="text-slate-500 block text-[9px]">VIBRATION</span>
+              <span className={`font-bold ${selectedBeamSensor.vibration > 3 ? 'text-amber-400' : 'text-white'}`}>
+                {selectedBeamSensor.vibration} mm/s
+              </span>
+            </div>
+            <div className="bg-slate-950 p-2.5 rounded border border-slate-800">
+              <span className="text-slate-500 block text-[9px]">TILT</span>
+              <span className={`font-bold ${tiltStatus === 'critical' ? 'text-red-400' : tiltStatus === 'warning' ? 'text-amber-400' : 'text-emerald-400'}`}>
+                {selectedBeamSensor.tilt}°
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Environmental Readings */}
+        <div className="bg-slate-900/80 border border-slate-800 p-3 rounded-xl mb-4">
+          <h4 className="text-[10px] font-bold text-cyan-300 mb-2 flex items-center gap-1.5">
+            <Flame className="w-3 h-3 text-amber-400" />
+            ATMOSPHERIC READINGS
+          </h4>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="bg-slate-950 p-2 rounded border border-slate-800">
+              <span className="text-slate-500 block text-[9px]">CH₄ METHANE</span>
+              <span className={`font-bold ${selectedBeamSensor.ch4 > 0.8 ? 'text-red-400' : 'text-white'}`}>{selectedBeamSensor.ch4}%</span>
+            </div>
+            <div className="bg-slate-950 p-2 rounded border border-slate-800">
+              <span className="text-slate-500 block text-[9px]">CO</span>
+              <span className="font-bold text-white">{selectedBeamSensor.co} ppm</span>
+            </div>
+            <div className="bg-slate-950 p-2 rounded border border-slate-800">
+              <span className="text-slate-500 block text-[9px]">O₂</span>
+              <span className="font-bold text-cyan-400">{selectedBeamSensor.o2}%</span>
+            </div>
+            <div className="bg-slate-950 p-2 rounded border border-slate-800">
+              <span className="text-slate-500 block text-[9px]">TEMPERATURE</span>
+              <span className="font-bold text-white">{selectedBeamSensor.temperature}°C</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Hardware Status */}
+        <div className="bg-slate-950/70 border border-slate-800 p-3 rounded-xl text-[10px] grid grid-cols-3 gap-2">
+          <div>
+            <span className="text-slate-500 block">BATTERY</span>
+            <div className="flex items-center gap-1 mt-0.5">
+              <Battery className="w-3 h-3 text-emerald-400" />
+              <span className="text-emerald-400 font-bold">{selectedBeamSensor.battery}%</span>
+            </div>
+          </div>
+          <div>
+            <span className="text-slate-500 block">SIGNAL</span>
+            <div className="flex items-center gap-1 mt-0.5">
+              <Wifi className="w-3 h-3 text-cyan-400" />
+              <span className="text-white font-bold">{selectedBeamSensor.signalStrength}%</span>
+            </div>
+          </div>
+          <div>
+            <span className="text-slate-500 block">HUMIDITY</span>
+            <span className="text-cyan-400 font-bold">{selectedBeamSensor.humidity}%</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ======== ROBOT PANEL ========
   if (selectedRobot) {
     return (
       <div className="w-full h-full min-h-[500px] bg-[#090e1a]/90 backdrop-blur-md rounded-xl border border-cyan-900/50 p-4 font-mono text-slate-200 overflow-y-auto shadow-[0_0_30px_rgba(0,240,255,0.05)]">
         {/* Header */}
         <div className="flex items-start justify-between border-b border-cyan-900/50 pb-4 mb-4">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 rounded-xl bg-cyan-950/80 border border-cyan-500/60 flex items-center justify-center text-cyan-400">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-950/80 to-slate-900 border border-cyan-500/60 flex items-center justify-center text-cyan-400 shadow-[0_0_12px_rgba(0,240,255,0.2)]">
               <Bot className="w-6 h-6 animate-pulse" />
             </div>
             <div>

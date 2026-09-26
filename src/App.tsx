@@ -9,6 +9,7 @@ import { AddWorkerModal } from './components/Workers/AddWorkerModal';
 import { EmergencyPanel } from './components/Emergency/EmergencyPanel';
 import { ResearchWhitepaper } from './components/Research/ResearchWhitepaper';
 import { StagingDock } from './components/StagingDock';
+import { BeamSensorGrid } from './components/Sensors/BeamSensorGrid';
 
 export const App: React.FC = () => {
   const { activeTab, setActiveTab, workers, incidents } = useMineSafety();
@@ -44,6 +45,11 @@ export const App: React.FC = () => {
           <div className="lg:col-span-3 h-full">
             <WorkerList />
           </div>
+        </div>
+
+        {/* Beam Sensor Grid Panel */}
+        <div className="flex-none">
+          <BeamSensorGrid />
         </div>
 
         {/* Bottom Staging Dock */}

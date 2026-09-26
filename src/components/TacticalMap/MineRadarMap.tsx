@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useMineSafety } from '../../context/MineSafetyContext';
 import { soundFX } from '../../utils/soundEffects';
-import { Bot, User, Radio, Flame, TriangleAlert, Compass, Crosshair } from 'lucide-react';
+import { Bot, User, Radio, Flame, TriangleAlert, Compass, Crosshair, Cpu } from 'lucide-react';
 import { Worker } from '../../types';
 
 interface MineRadarMapProps {
@@ -15,12 +15,15 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
     zones,
     robot,
     fixedSensors,
+    beamSensors,
     activeRescueRoute,
     radarSweepAngle,
     selectWorker,
     selectRobot,
+    selectBeamSensor,
     selectedWorker,
     selectedRobot,
+    selectedBeamSensor,
     isRobotDeployed,
     pingedEntityId,
     dispatchRobotToWorker,
@@ -32,6 +35,7 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [showGasPlumes, setShowGasPlumes] = useState<boolean>(true);
   const [showSensors, setShowSensors] = useState<boolean>(true);
+  const [showBeamSensors, setShowBeamSensors] = useState<boolean>(true);
   const [showCorridors, setShowCorridors] = useState<boolean>(true);
   const [showRadarSweep, setShowRadarSweep] = useState<boolean>(true);
 
@@ -55,6 +59,14 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
     selectRobot(robot);
   };
 
+  const handleBeamSensorClick = (sensorId: string) => {
+    soundFX.playBlip();
+    const sensor = beamSensors.find(bs => bs.id === sensorId);
+    if (sensor) {
+      selectBeamSensor(sensor);
+    }
+  };
+
   return (
     <div
       ref={containerRef}
@@ -75,7 +87,9 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
           <span>DEPTH: <b className="text-cyan-400">-50m to -480m</b></span>
         </div>
         <div className="flex items-center space-x-2 bg-slate-950/70 border border-slate-800 px-2 py-0.5 rounded text-slate-400">
-          <span>OPERATIONAL MESH: <b>LORA-UWB v4.2</b></span>
+          <span>JIVA MESH: <b>LORA-UWB v4.2</b></span>
+          <span className="text-slate-600">|</span>
+          <span>BEAM SENSORS: <b className="text-indigo-400">{beamSensors.filter(bs => bs.isOnline).length} ONLINE</b></span>
         </div>
       </div>
 
@@ -97,7 +111,7 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
               : 'bg-slate-900/50 border-slate-700 text-slate-400'
           }`}
         >
-          GAS HEATMAP: {showGasPlumes ? 'ON' : 'OFF'}
+          GAS: {showGasPlumes ? 'ON' : 'OFF'}
         </button>
 
         <button
@@ -112,6 +126,17 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
         </button>
 
         <button
+          onClick={() => setShowBeamSensors(!showBeamSensors)}
+          className={`px-2 py-1 rounded border transition-all ${
+            showBeamSensors
+              ? 'bg-indigo-950/70 border-indigo-500/60 text-indigo-300'
+              : 'bg-slate-900/50 border-slate-700 text-slate-400'
+          }`}
+        >
+          BEAMS: {showBeamSensors ? 'ON' : 'OFF'}
+        </button>
+
+        <button
           onClick={() => setShowRadarSweep(!showRadarSweep)}
           className={`px-2 py-1 rounded border transition-all ${
             showRadarSweep
@@ -119,7 +144,7 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
               : 'bg-slate-900/50 border-slate-700 text-slate-400'
           }`}
         >
-          RADAR SWEEP: {showRadarSweep ? 'ON' : 'OFF'}
+          RADAR: {showRadarSweep ? 'ON' : 'OFF'}
         </button>
 
         <div className="flex items-center space-x-1 pl-2 border-l border-slate-800">
@@ -142,8 +167,8 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
 
         {/* Bot Speed Controls */}
         <div className="flex items-center space-x-1 pl-2 ml-1 border-l border-slate-800">
-          <span className="text-slate-400 font-bold pr-1 text-[10px]">BOT SPEED:</span>
-          {[1, 2, 4, 6, 8, 10].map((speed) => (
+          <span className="text-slate-400 font-bold pr-1 text-[10px]">BOT:</span>
+          {[1, 2, 4, 8].map((speed) => (
             <button
               key={speed}
               onClick={() => setBotSpeedMultiplier(speed)}
@@ -192,6 +217,11 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
               <stop offset="0%" stopColor="#ff3366" stopOpacity="0.55" />
               <stop offset="45%" stopColor="#f59e0b" stopOpacity="0.3" />
               <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
+            </radialGradient>
+
+            <radialGradient id="beamSensorGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#818cf8" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#818cf8" stopOpacity="0" />
             </radialGradient>
 
             <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
@@ -307,26 +337,21 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
           {/* 5. Animated Toxic Methane & CO Plume Overlay */}
           {showGasPlumes && (
             <g>
-              {/* Sector 3 High Methane Cluster */}
-              <circle
-                cx="770"
-                cy="510"
-                r="95"
-                fill="url(#methaneGasPlume)"
-                className="animate-pulse"
-              />
-              <text x="770" y="550" fill="#f87171" fontSize="9" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
-                ⚠️ CH4 PLUME CONCENTRATION: 1.15% - 2.1%
-              </text>
-
-              {/* Sector 2 Moderate Outgassing */}
-              <circle
-                cx="740"
-                cy="190"
-                r="65"
-                fill="#f59e0b"
-                fillOpacity="0.15"
-              />
+              {/* Only show gas plumes for zones with elevated CH4 (>0.8%) */}
+              {zones.filter(z => z.ch4Level > 0.8).map(zone => (
+                <g key={`plume-${zone.id}`}>
+                  <circle
+                    cx={zone.center[0]}
+                    cy={zone.center[1]}
+                    r="95"
+                    fill="url(#methaneGasPlume)"
+                    className="animate-pulse"
+                  />
+                  <text x={zone.center[0]} y={zone.center[1] + 40} fill="#f87171" fontSize="9" fontFamily="monospace" textAnchor="middle" fontWeight="bold">
+                    ⚠️ CH4 PLUME: {zone.ch4Level}%
+                  </text>
+                </g>
+              ))}
             </g>
           )}
 
@@ -391,6 +416,65 @@ export const MineRadarMap: React.FC<MineRadarMapProps> = ({ compact = false }) =
                   className="bg-black/80"
                 >
                   {sensor.id} ({sensor.ch4}%)
+                </text>
+              </g>
+            );
+          })}
+
+          {/* 7b. Beam Sensor Boxes on Support Beams */}
+          {showBeamSensors && beamSensors.map((bs) => {
+            const isSelected = selectedBeamSensor?.id === bs.id;
+            const isPinged = pingedEntityId === bs.id;
+            const sensorColor = bs.strain > 400 ? '#ff3366' : bs.strain > 200 ? '#f59e0b' : '#818cf8';
+
+            return (
+              <g
+                key={bs.id}
+                transform={`translate(${bs.x}, ${bs.y})`}
+                onClick={() => handleBeamSensorClick(bs.id)}
+                className="cursor-pointer"
+              >
+                {/* Pulse ring for online sensors */}
+                {bs.isOnline && (
+                  <circle r="14" fill="none" stroke={sensorColor} strokeWidth="1" strokeOpacity="0.4" className="sensor-pulse-ring" />
+                )}
+
+                {/* Selection ring */}
+                {isSelected && (
+                  <circle r="16" fill="none" stroke="#818cf8" strokeWidth="2" strokeDasharray="4 3" className="animate-spin" filter="url(#neonGlow)" />
+                )}
+
+                {/* Ping ring */}
+                {isPinged && (
+                  <circle r="30" fill="none" stroke="#ffffff" strokeWidth="3" className="animate-ping" filter="url(#neonGlow)" />
+                )}
+
+                {/* Sensor box body — small square */}
+                <rect
+                  x="-6"
+                  y="-6"
+                  width="12"
+                  height="12"
+                  rx="2"
+                  fill="#0e1630"
+                  stroke={sensorColor}
+                  strokeWidth="1.5"
+                />
+
+                {/* Inner dot */}
+                <circle r="2.5" fill={sensorColor} className="beam-sensor-blink" />
+
+                {/* Label */}
+                <text
+                  x="0"
+                  y="16"
+                  fill="#a5b4fc"
+                  fontSize="7"
+                  fontFamily="monospace"
+                  fontWeight="bold"
+                  textAnchor="middle"
+                >
+                  {bs.id}
                 </text>
               </g>
             );
