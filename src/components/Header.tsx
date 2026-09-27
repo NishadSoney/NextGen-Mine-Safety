@@ -32,7 +32,6 @@ export const Header: React.FC = () => {
     toggleSimulating,
     toggleAudioMute,
     toggleEvacuationAlarm,
-    setIsAddWorkerOpen,
     setIsResearchOpen,
     toggleRobotDeployment,
     resetAllSimulation
@@ -58,21 +57,39 @@ export const Header: React.FC = () => {
   const unresolvedIncidents = incidents.filter((i) => !i.resolved).length;
   const onlineBeamSensors = beamSensors.filter((bs) => bs.isOnline).length;
 
+  let systemStatus = 'SAFE';
+  let statusClasses = 'text-emerald-400';
+  let dotClasses = 'bg-emerald-500 animate-pulse';
+
+  if (isEvacuationAlarmActive || criticalWorkers > 0 || unresolvedIncidents > 0) {
+    systemStatus = 'EMERGENCY';
+    statusClasses = 'text-red-500';
+    dotClasses = 'bg-red-500 animate-ping';
+  } else if (warningWorkers > 1) {
+    systemStatus = 'WARNING';
+    statusClasses = 'text-orange-500';
+    dotClasses = 'bg-orange-500 animate-pulse';
+  } else if (warningWorkers > 0 || onlineBeamSensors < beamSensors.length) {
+    systemStatus = 'CAUTION';
+    statusClasses = 'text-amber-400';
+    dotClasses = 'bg-amber-400';
+  }
+
   return (
-    <header className="w-full bg-[#0a0f1c]/95 border-b border-cyan-900/40 backdrop-blur-md sticky top-0 z-40 px-4 py-2.5">
+    <header className="w-full bg-[#0a0f1c]/95 border-b border-cyan-900/40 backdrop-blur-md sticky top-0 z-40 px-6 py-5 md:py-6 shadow-[0_4_20px_rgba(0,240,255,0.05)]">
       {/* Top Banner & Telemetry Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         {/* Left: Branding & Mine System Identifier */}
-        <div className="flex items-center space-x-3">
-          <div className="relative flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-950/80 to-emerald-950/60 border border-cyan-500/40 text-cyan-400 shadow-[0_0_20px_rgba(0,240,255,0.25)]">
-            <Radio className="w-5 h-5 animate-pulse" />
-            <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+        <div className="flex items-center space-x-4">
+          <div className="relative flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-950/80 to-emerald-950/60 border border-cyan-500/40 text-cyan-400 shadow-[0_0_20px_rgba(0,240,255,0.25)]">
+            <Radio className="w-6 h-6 animate-pulse" />
+            <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 animate-ping" />
           </div>
           <div>
-            <div className="flex items-center space-x-2">
-              <h1 className="text-xl font-bold tracking-wider text-white font-hud flex items-center gap-1.5">
-                <span className="jiva-accent-gradient text-2xl">JIVA</span>
-                <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/30 text-cyan-300">
+            <div className="flex items-center space-x-3">
+              <h1 className="text-2xl font-bold tracking-wider text-white font-hud flex items-center gap-2">
+                <span className="jiva-accent-gradient text-4xl">JIVA</span>
+                <span className="text-xs font-mono uppercase px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 mt-1">
                   v4.0-COMMAND
                 </span>
               </h1>
@@ -86,39 +103,26 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Center: Live Status Badges & Threat Level */}
-        <div className="flex items-center space-x-2 sm:space-x-3 bg-slate-900/70 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-mono">
-          <div className="flex items-center gap-1.5 text-emerald-400">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>SAFE: <b>{safeWorkers}</b></span>
-          </div>
-          <span className="text-slate-700">|</span>
-          <div className="flex items-center gap-1.5 text-amber-400">
-            <span className="w-2 h-2 rounded-full bg-amber-500" />
-            <span>WARN: <b>{warningWorkers}</b></span>
-          </div>
-          <span className="text-slate-700">|</span>
-          <div className={`flex items-center gap-1.5 ${criticalWorkers > 0 ? 'text-red-400' : 'text-slate-500'}`}>
-            {criticalWorkers > 0 ? (
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
-            ) : (
-              <span className="w-2 h-2 rounded-full bg-slate-600" />
-            )}
-            <span>CRITICAL: <b>{criticalWorkers}</b></span>
-          </div>
-          <span className="text-slate-700">|</span>
+        <div className="flex items-center space-x-3 sm:space-x-4 bg-slate-900/80 border border-slate-700/60 rounded-xl px-4 py-2 text-xs sm:text-sm font-mono shadow-inner shadow-slate-950">
           <div className="flex items-center gap-1.5 text-cyan-400">
-            <Cpu className="w-3 h-3" />
-            <span>SENSORS: <b>{onlineBeamSensors}/{beamSensors.length}</b></span>
+            <Cpu className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>SENSORS: <b>{onlineBeamSensors}</b></span>
           </div>
-          {unresolvedIncidents > 0 && (
-            <>
-              <span className="text-slate-700">|</span>
-              <div className="flex items-center gap-1 text-red-500 font-bold animate-pulse">
-                <Flame className="w-3.5 h-3.5" />
-                <span>{unresolvedIncidents} ACTIVE INCIDENT{unresolvedIncidents > 1 ? 'S' : ''}</span>
-              </div>
-            </>
-          )}
+          <span className="text-slate-700">|</span>
+          <div className="flex items-center gap-1.5 text-blue-400">
+            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>WORKERS: <b>{workers.length}</b></span>
+          </div>
+          <span className="text-slate-700">|</span>
+          <div className="flex items-center gap-1.5 text-indigo-400">
+            <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>BOTS: <b>{isRobotDeployed ? 1 : 0}</b></span>
+          </div>
+          <span className="text-slate-700">|</span>
+          <div className={`flex items-center gap-1.5 ${statusClasses}`}>
+            <span className={`w-2 h-2 rounded-full ${dotClasses}`} />
+            <span>STATUS: <b>{systemStatus}</b></span>
+          </div>
         </div>
 
         {/* Right: Quick Action Controls */}
@@ -139,14 +143,6 @@ export const Header: React.FC = () => {
             </span>
           </button>
 
-          {/* Add Worker Button */}
-          <button
-            onClick={() => setIsAddWorkerOpen(true)}
-            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-mono font-bold rounded bg-cyan-950/70 border border-cyan-500/50 text-cyan-300 hover:bg-cyan-900/60 hover:border-cyan-400 hover:text-white transition-all shadow-[0_0_10px_rgba(0,240,255,0.15)]"
-          >
-            <UserPlus className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">+ ADD MINER</span>
-          </button>
 
           {/* Toggle Robot Button */}
           <button
