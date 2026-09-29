@@ -119,6 +119,7 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'safe' | 'warning' | 'critical'>('all');
   const [pingedEntityId, setPingedEntityId] = useState<string | null>(null);
+  const [demoResetKey, setDemoResetKey] = useState<number>(0);
 
   const pingEntity = (id: string) => {
     soundFX.playRadarPing();
@@ -425,6 +426,7 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setSelectedWorker(null);
     setSelectedBeamSensor(null);
     setIsEvacuationAlarmActive(false);
+    setDemoResetKey((prev) => prev + 1);
   };
 
   // Continuous Tactical Radar & Simulation Loop (Heartbeats, subtle movements, gas fluctuation)
@@ -435,6 +437,107 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
     return () => clearInterval(radarInterval);
   }, []);
+
+  // Demo View Sequence: 0-5s SAFE -> 5s WARNING -> 10s CRITICAL ALERT for MINER-104
+  useEffect(() => {
+    if (!isSimulating) return;
+
+    // Stage 1: At 5s, escalate MINER-104 to WARNING state
+    const warningTimer = setTimeout(() => {
+      setWorkers((prev) =>
+        prev.map((w) => {
+          if (w.id === 'MINER-104') {
+            return {
+              ...w,
+              status: 'warning',
+              riskScore: 48,
+              heartRate: 110,
+              spO2: 95,
+              ch4: 0.55,
+              co: 25,
+              history: [
+                ...w.history,
+                {
+                  time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                  heartRate: 110,
+                  spO2: 95,
+                  ch4: 0.55
+                }
+              ]
+            };
+          }
+          return w;
+        })
+      );
+      soundFX.playBlip();
+    }, 5000);
+
+    // Stage 2: At 10s, escalate MINER-104 to CRITICAL state
+    const criticalTimer = setTimeout(() => {
+      let workerTargetCoord: [number, number] = [780, 520];
+
+      setWorkers((prev) =>
+        prev.map((w) => {
+          if (w.id === 'MINER-104') {
+            workerTargetCoord = [w.x, w.y];
+            return {
+              ...w,
+              status: 'critical',
+              riskScore: 94,
+              heartRate: 136,
+              spO2: 87,
+              ch4: 1.45,
+              co: 65,
+              sosActive: true,
+              history: [
+                ...w.history,
+                {
+                  time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                  heartRate: 136,
+                  spO2: 87,
+                  ch4: 1.45
+                }
+              ]
+            };
+          }
+          return w;
+        })
+      );
+
+      const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const rescueRoute = findSafestRescueRoute([230, 130], workerTargetCoord, INITIAL_ZONES);
+
+      const newInc: EmergencyIncident = {
+        id: `INC-${Date.now().toString().slice(-4)}`,
+        title: 'CRITICAL ALERT: Severe Methane Spike & Tachycardia — Rajesh Kumar Soren (MINER-104)',
+        type: 'gas_leak',
+        severity: 'critical',
+        timestamp,
+        affectedWorkerIds: ['MINER-104'],
+        zoneId: 'ZONE-3',
+        description: 'Atmospheric methane level spiked to 1.45% vol in Sub-Tunnel 4B. Worker telemetry registers critical tachycardia (136 BPM) and severe hypoxia.',
+        hazardMetrics: 'CH4: 1.45% | HR: 136 BPM | SpO2: 87% | CO: 65ppm',
+        safestRescueRoute: rescueRoute,
+        resolved: false
+      };
+
+      setIncidents((prev) => {
+        if (prev.some((inc) => inc.affectedWorkerIds.includes('MINER-104') && !inc.resolved)) {
+          return prev;
+        }
+        return [newInc, ...prev];
+      });
+
+      setActiveRescueRoute(rescueRoute);
+      soundFX.playAlarm();
+      soundFX.playRouteFound();
+    }, 10000);
+
+    return () => {
+      clearTimeout(warningTimer);
+      clearTimeout(criticalTimer);
+    };
+  }, [demoResetKey, isSimulating]);
 
   // Periodic Telemetry Simulation Loop
   useEffect(() => {
@@ -448,8 +551,23 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           const hrDelta = (Math.random() - 0.48) * 3;
           let nextHR = Math.round(Math.max(45, Math.min(180, w.heartRate + hrDelta)));
           let nextSpO2 = Math.round(Math.max(80, Math.min(100, w.spO2 + (Math.random() - 0.5) * 0.4)));
+          let nextCh4 = w.ch4;
           
-          if (w.sosActive || w.fallDetected) {
+          if (w.id === 'MINER-104') {
+            if (w.status === 'safe' && !w.sosActive) {
+              nextHR = Math.max(75, Math.min(85, nextHR));
+              nextSpO2 = Math.max(97, Math.min(99, nextSpO2));
+              nextCh4 = 0.15;
+            } else if (w.status === 'warning' && !w.sosActive) {
+              nextHR = Math.max(106, Math.min(114, nextHR));
+              nextSpO2 = Math.max(94, Math.min(96, nextSpO2));
+              nextCh4 = 0.55;
+            } else if (w.status === 'critical' || w.sosActive) {
+              nextHR = Math.max(130, Math.min(150, nextHR));
+              nextSpO2 = Math.min(88, nextSpO2);
+              nextCh4 = 1.45;
+            }
+          } else if (w.sosActive || w.fallDetected) {
             nextHR = Math.max(115, nextHR);
             nextSpO2 = Math.min(92, nextSpO2);
           }
@@ -471,7 +589,7 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
           const currentZone = zones.find((z) => z.id === w.zoneId);
           const { riskScore, status } = calculateWorkerRisk(
-            { ...w, heartRate: nextHR, spO2: nextSpO2, motionStatus: nextMotion },
+            { ...w, heartRate: nextHR, spO2: nextSpO2, ch4: nextCh4, motionStatus: nextMotion },
             currentZone
           );
 
@@ -482,7 +600,7 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
               time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
               heartRate: nextHR,
               spO2: nextSpO2,
-              ch4: w.ch4
+              ch4: nextCh4
             });
             if (history.length > 8) history.shift();
           }
@@ -493,6 +611,7 @@ export const MineSafetyProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             y: nextY,
             heartRate: nextHR,
             spO2: nextSpO2,
+            ch4: nextCh4,
             battery: Math.max(5, w.battery - 0.01),
             riskScore,
             status,
